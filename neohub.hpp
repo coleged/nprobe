@@ -68,6 +68,7 @@ Classes:
 #include <netinet/in.h>
 #include <netdb.h>
 #include <nlohmann/json.hpp>
+#include <sstream>
 
 // prototypes in functions.cpp
 
@@ -80,11 +81,38 @@ bool wneohub(char *);
 
 //*****************************
 //
+//  Switch       CLASS
+//
+//*****************************
+
+class Switch{
+    
+    
+public:
+    Switch();
+    ~Switch();
+    
+    std::string getTimeOn();
+    std::string getTimeOff();
+    
+    int getHoursOn();
+    int getMinsOn();
+    int getHoursOff();
+    int getMinsOff();
+    
+    std::string timeOn = "HH:MM";
+    std::string timeOff = "HH:MM";
+    
+}; // Class Switch
+
+
+//*****************************
+//
 //  Comfort       CLASS
 //
 //*****************************
 
-class Comfort{
+class Comfort: public Switch{
     
     friend class Stat;
     
@@ -95,11 +123,11 @@ public:
     
     void setComfort(std::string time,int temp);
     void print(); // debug method
-    std::string getTime();
+    
     int getTemp();
     
 private:
-    std::string time = "HH:MM";
+
     int temp;
     
 }; // Class Comfort
@@ -110,7 +138,7 @@ private:
 //
 //*****************************
  
- class Event{
+ class Event: public Switch{
  
  friend class Timer;
  
@@ -121,12 +149,10 @@ private:
  
  void setTimerEvent(std::string tmOn,std::string tmOff);
  void print(); // debug method
- std::string getTimeOn();
- std::string getTimeOff();
  
- private:
- std::string timeOn = "HH:MM";
- std::string timeOff = "HH:MM";
+ 
+ 
+ 
  
  }; // Class Event
 
@@ -145,6 +171,9 @@ public:
     ~NeoStatBase();
     
     std::string getName();          // returns the name of the device
+    
+    
+    
     
     bool    away = false;
     bool    cooling = false;
@@ -221,10 +250,22 @@ public:
     bool    zone_2_paired_to_multilink = false;
     std::string  device = "unassigned";
     
+    template<typename T>
+        T holdTimeHours() {return hold_time.hours;
+        };
+    
+    template<typename T>
+    T holdTimeMins() {return hold_time.mins;
+    };
+    
     
 }; // Class NeoStatBase
 
+template<> int NeoStatBase::holdTimeHours();
+template<> std::string NeoStatBase::holdTimeHours();
 
+template<> int NeoStatBase::holdTimeMins();
+template<> std::string NeoStatBase::holdTimeMins();
 
 //*****************************
 //
@@ -252,9 +293,8 @@ public:
     void getComfortLevels(); // gets comfort from neohub -> memory private perhaps?
     void printComfortLevels();
     
-    int holdTimeHours();
-    
-    int holdTimeMins();
+    //int holdTimeHours();
+    //int holdTimeMins();
     
     float holdTemp();
     
@@ -287,8 +327,9 @@ public:
     bool holdOff();
     void getTimerEvents();
     void printTimerEvents();
-    int holdTimeHours();
-    int holdTimeMins();
+    
+    //int holdTimeHours();
+    //int holdTimeMins();
     
 private: 
 

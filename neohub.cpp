@@ -18,7 +18,6 @@ using json = nlohmann::json;
 //*****************************
 
 Neohub::Neohub(){} // Neohub()
-
 Neohub::~Neohub(){}
 
 //*****************************
@@ -227,13 +226,13 @@ void Neohub::printStats(){ // iterate through the stats
         if ( it->isOn()){
             std::cout << " HEATING";
         }
-        if ( it->holdTimeHours() + it->holdTimeMins() ){ // time remaining != 0
+        if ( it->holdTimeHours<int>() + it->holdTimeMins<int>() ){ // time remaining != 0
             std::cout << " Holding "
             << it->holdTemp()
             << " for "
-            << it->holdTimeHours()
+            << it->holdTimeHours<std::string>()
             << ":"
-            << it->holdTimeMins();
+            << it->holdTimeMins<std::string>();
         }
         std::cout << std::endl;
     }
@@ -245,11 +244,11 @@ void Neohub::printTimers(){ // iterate through the timers
         std::cout << it->getName();
         if ( it->isOn()){
             std::cout   << " : ON";
-            if ( it->holdTimeHours() + it->holdTimeMins() ){ // time remaining != 0
+            if ( it->holdTimeHours<int>() + it->holdTimeMins<int>() ){ // time remaining != 0
                 std::cout << " Holding for "
-                << it->holdTimeHours()
+                << it->holdTimeHours<std::string>()
                 << ":"
-                << it->holdTimeMins();
+                << it->holdTimeMins<std::string>();
             }
         }else{
             std::cout << " : OFF";
@@ -281,6 +280,36 @@ std::string NeoStatBase::getName(){
     return device;
 }//getName()
 
+template<>
+std::string NeoStatBase::holdTimeHours<std::string>(){
+    std::stringstream ss;
+    ss.precision(2);
+    ss.width(2);
+    ss.fill('0');
+    ss << hold_time.hours;
+    std::string ret(ss.str());
+    return ret;
+}//holdTimeHours()
+template<> int         NeoStatBase::holdTimeHours<int>(){
+    return hold_time.hours;
+};
+
+template<>
+std::string NeoStatBase::holdTimeMins<std::string>(){
+    std::stringstream ss;
+    ss.precision(2);
+    ss.width(2);
+    ss.fill('0');
+    ss << hold_time.mins;
+    std::string ret(ss.str());
+    return ret;
+}//holdTimeMins()
+template<> int         NeoStatBase::holdTimeMins<int>(){
+    return hold_time.mins;
+};
+
+
+
 //*****************************
 //
 //  Stat       CLASS
@@ -302,13 +331,6 @@ bool Stat::isOn(){
     return heating;
 }//isOn()
 
-int Stat::holdTimeHours(){
-    return hold_time.hours;
-}//holdTimeHours()
-
-int Stat::holdTimeMins(){
-    return hold_time.mins;
-}//holdTimeMins()
 
 float Stat::holdTemp(){
     return hold_temperature;
@@ -365,7 +387,15 @@ void Stat::printComfortLevels(){
         event_idx = 0;
         for(std::string event : events){   // // ) ::=  ["HH:MM",(int)temp]
             std::cout << " " << event << " ";
-            std::cout << comfortLevels[period_idx][event_idx].getTime();
+            std::cout << comfortLevels[period_idx][event_idx].getTimeOn();
+            
+            /*
+            std::cout << "[";
+            std::cout << (60 * comfortLevels[period_idx][event_idx].getHoursOn()+
+                          comfortLevels[period_idx][event_idx].getMinsOn());
+            std::cout << "]";
+            */
+            
             std::cout << " ";
             std::cout << comfortLevels[period_idx][event_idx].getTemp();
             ++event_idx;
@@ -410,6 +440,31 @@ bool Stat::hold(int temp, int hours, int min){
 
 //*****************************
 //
+//  Switch       CLASS
+//
+//*****************************
+Switch::Switch(){};
+Switch::~Switch(){};
+
+std::string Switch::getTimeOn(){
+    return (timeOn);
+}//getTimeOn()
+
+std::string Switch::getTimeOff(){
+    return (timeOff);
+}//getTimeOff()
+
+int Switch::getHoursOn(){
+    return(std::stoi(timeOn.substr(0,2)));
+}
+
+int Switch::getMinsOn(){
+    return(std::stoi(timeOn.substr(3,2)));
+}
+
+
+//*****************************
+//
 //  Comfort       CLASS
 //
 //*****************************
@@ -418,17 +473,15 @@ Comfort::Comfort(){};
 Comfort::~Comfort(){};
 
 void Comfort::setComfort(std::string stime, int stemp){
-    time = stime;
+    timeOn = stime;
     temp = stemp;
 }//setComfort()
 
 void Comfort::print(){
-    printf("%s %i",time.c_str(),temp);
+    printf("%s %i",timeOn.c_str(),temp);
+    //printf("%s[%i] %i",timeOn.c_str(),60 * getHoursOn()+getMinsOn(),temp); // DEBUG VERSION
 }//print()
 
-std::string Comfort::getTime(){
-    return (time);
-}//getTime()
 
 int Comfort::getTemp(){
     return (temp);
@@ -457,13 +510,6 @@ void Event::print(){
     printf("%s %s",timeOn.c_str(),timeOff.c_str());
 }//print
 
-std::string Event::getTimeOn(){
-    return (timeOn);
-}//getTimeOn()
-
-std::string Event::getTimeOff(){
-    return (timeOff);
-}//getTimeOff()
 
 
 //*****************************
@@ -479,13 +525,6 @@ bool Timer::isOn(){
     return timer;
 }//isOn()
 
-int Timer::holdTimeHours(){
-    return hold_time.hours;
-}//holdTimeHours()
-
-int Timer::holdTimeMins(){
-    return hold_time.mins;
-}//holdTimeMins()
 
 bool Timer::holdOn(int mins){
     /*
