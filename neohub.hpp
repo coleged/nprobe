@@ -70,6 +70,12 @@ Classes:
 #include <nlohmann/json.hpp>
 #include <sstream>
 
+#include "Time.hpp"
+
+
+
+
+
 // prototypes in functions.cpp
 
 char *stripString(char *);
@@ -79,29 +85,42 @@ bool wneohub(char *);
 
 // classes
 
+
+
 //*****************************
 //
 //  Switch       CLASS
+//
+//  Base class for comfort and event
 //
 //*****************************
 
 class Switch{
     
+    friend class Comfort;   // to allow access to privates in derived classes
+    friend class Event;
     
 public:
     Switch();
     ~Switch();
     
+    Time getTimeOnT();
+    Time getTimeOffT();
     std::string getTimeOn();
     std::string getTimeOff();
+    
+    void setTimeOn(int h, int m);
+    void setTimeOff(int h, int m);
     
     int getHoursOn();
     int getMinsOn();
     int getHoursOff();
     int getMinsOff();
+   
+private:
+    Time on;
+    Time off;
     
-    std::string timeOn = "HH:MM";
-    std::string timeOff = "HH:MM";
     
 }; // Class Switch
 
@@ -143,10 +162,14 @@ private:
  friend class Timer;
  
  public:
+     
+     // need to change these string parameters to Time Class
  Event();
+ //Event(Time tmOn,Time tmOff);
  Event(std::string tmOn,std::string tmOff);
  ~Event();
  
+ //void setTimerEvent(Time tmOn,Time tmOff);
  void setTimerEvent(std::string tmOn,std::string tmOff);
  void print(); // debug method
  
@@ -293,8 +316,6 @@ public:
     void getComfortLevels(); // gets comfort from neohub -> memory private perhaps?
     void printComfortLevels();
     
-    //int holdTimeHours();
-    //int holdTimeMins();
     
     float holdTemp();
     
@@ -328,8 +349,6 @@ public:
     void getTimerEvents();
     void printTimerEvents();
     
-    //int holdTimeHours();
-    //int holdTimeMins();
     
 private: 
 

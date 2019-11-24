@@ -10,6 +10,8 @@
 
 #include "neohub.hpp"
 
+
+
 bool debug = _DEBUG;
 
 // ************   errorUsage()
@@ -36,6 +38,24 @@ void errorUsage(){
     printf("    -h <hours>   - Hours of hold time (default = 1 hour)\n");
     printf("    -m <mins>    - minutes of hold time (default = 0 mins\n");
     printf("    -f <file>    - apply JSON formatted neohub commands contained in <file>\n");
+    
+    Time a, b, c(23, 45);
+    std::cout << a.getNow();
+    std::cout << ' ';
+    std::cout << b.getNow();
+    std::cout << ' ';
+    std::cout << c.remaining();
+    std::cout << std::endl;
+    
+    
+    std::cout << a.asStr();
+    std::cout << ' ';
+    std::cout << b;
+    std::cout << ' ';
+    std::cout << c;
+    std::cout << ' ';
+    std::cout << std::endl;
+
     
 }
 

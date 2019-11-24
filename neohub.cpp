@@ -7,9 +7,11 @@
 //
 
 #include "neohub.hpp"
+
 extern bool debug;
 
 using json = nlohmann::json;
+
 
 //*****************************
 //
@@ -438,6 +440,7 @@ bool Stat::hold(int temp, int hours, int min){
     return false;
 }
 
+
 //*****************************
 //
 //  Switch       CLASS
@@ -446,20 +449,28 @@ bool Stat::hold(int temp, int hours, int min){
 Switch::Switch(){};
 Switch::~Switch(){};
 
+void Switch::setTimeOn(int h, int m){
+    on.setTime(h,m);
+}
+
+void Switch::setTimeOff(int h, int m){
+    off.setTime(h,m);
+}
+
 std::string Switch::getTimeOn(){
-    return (timeOn);
+    return (on.asStr());
 }//getTimeOn()
 
 std::string Switch::getTimeOff(){
-    return (timeOff);
+    return (off.asStr());
 }//getTimeOff()
 
 int Switch::getHoursOn(){
-    return(std::stoi(timeOn.substr(0,2)));
+    return(on.getHours());
 }
 
 int Switch::getMinsOn(){
-    return(std::stoi(timeOn.substr(3,2)));
+    return(on.getMins());
 }
 
 
@@ -473,12 +484,14 @@ Comfort::Comfort(){};
 Comfort::~Comfort(){};
 
 void Comfort::setComfort(std::string stime, int stemp){
-    timeOn = stime;
+    int h = stoi(stime.substr(0,2));
+    int m = stoi(stime.substr(3,2));
+    on.setTime(h,m); // on is of class Time
     temp = stemp;
 }//setComfort()
 
 void Comfort::print(){
-    printf("%s %i",timeOn.c_str(),temp);
+    printf("%s %i",on.asStr().c_str(),temp);
     //printf("%s[%i] %i",timeOn.c_str(),60 * getHoursOn()+getMinsOn(),temp); // DEBUG VERSION
 }//print()
 
@@ -497,17 +510,25 @@ Event::Event(){};
 Event::~Event(){};
 
 Event::Event(std::string stimeOn,std::string stimeOff){
-    timeOn = stimeOn;
-    timeOff = stimeOff;
+    int h = stoi(stimeOn.substr(0,2));
+    int m = stoi(stimeOn.substr(3,2));
+    on.setTime(h,m);
+    h = stoi(stimeOff.substr(0,2));
+    m = stoi(stimeOff.substr(3,2));
+    off.setTime(h,m);
 }
 
 void Event::setTimerEvent(std::string stimeOn, std::string stimeOff){
-    timeOn = stimeOn;
-    timeOff = stimeOff;
+    int h = stoi(stimeOn.substr(0,2));
+    int m = stoi(stimeOn.substr(3,2));
+    on.setTime(h,m);
+    h = stoi(stimeOff.substr(0,2));
+    m = stoi(stimeOff.substr(3,2));
+    off.setTime(h,m);
 }//setTimerEvent()
 
 void Event::print(){
-    printf("%s %s",timeOn.c_str(),timeOff.c_str());
+    printf("%s %s",on.asStr().c_str(),off.asStr().c_str());
 }//print
 
 
