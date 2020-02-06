@@ -39,7 +39,7 @@ Classes:
 #endif
 
 #define MYNAME  "nprobe"
-#define VERSION "2.2.2 November 2019. Ed Cole <colege@gmail.com>"
+#define VERSION "2.2.4b Febuary 2020. Ed Cole <colege@gmail.com>"
 // V2.2 uses nlohmann/jsoncpp
 
 #define NEOHUB_NAME "neohub.rainbow-futures.com"
@@ -73,7 +73,7 @@ Classes:
 #include "Time.hpp"
 
 
-
+class Neohub;   // pre declaration is needed for the sake of order in here
 
 
 // prototypes in functions.cpp
@@ -82,6 +82,9 @@ char *stripString(char *);
 bool readJson(char *, char *);
 char *timestamp();
 bool wneohub(char *);
+
+// prototypes in fl_gui.cpp
+int gui(Neohub *);
 
 // classes
 
@@ -172,8 +175,6 @@ private:
  //void setTimerEvent(Time tmOn,Time tmOff);
  void setTimerEvent(std::string tmOn,std::string tmOff);
  void print(); // debug method
- 
- 
  
  
  
@@ -377,6 +378,8 @@ public:
    
     void newStat(Stat); // push a Stat object onto the neohub stat vector
     void printStats();  // print out the Stat vector
+    std::vector<Stat>   *getStats();    // returns pointer to stats vector
+    std::vector<Timer>  *getTimers();   // returns pointer to times vector
     
     void printLog();    // prints single line of stat status data
     

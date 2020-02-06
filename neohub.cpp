@@ -198,7 +198,8 @@ char *Neohub::getHub(char *cmd){ // takes Neohub command and returns result
         /* an error looks like this
         {"error":"Invalid argument to READ_COMFORT_LEVELS, should be a valid device or array of valid devices"}
         */
-        if( strncmp("{\"error",buffer,7)==0){
+        //if( strncmp("{\"error",buffer,6)==0){
+        if( strncmp(R"({"error")",buffer,6)==0){
             fprintf(stderr,"ERROR Neohub::getHub json command error\n");
             fprintf(stderr,"\tProbably a neostat offline\n");
             return(nullptr);
@@ -240,6 +241,10 @@ void Neohub::printStats(){ // iterate through the stats
     }
 }//printStats()
 
+std::vector<Stat>* Neohub::getStats(){
+    return &stats;
+}
+
 //*****************************
 void Neohub::printTimers(){ // iterate through the timers
     for(auto it = timers.begin(); it != timers.end(); ++it){
@@ -258,6 +263,10 @@ void Neohub::printTimers(){ // iterate through the timers
         std::cout << std::endl;
     }
 }//printTimers()
+
+std::vector<Timer>* Neohub::getTimers(){
+    return &timers;
+}
 
 //*****************************
 void Neohub::printLog(){ // iterate through the stats
