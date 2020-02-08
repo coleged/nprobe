@@ -14,7 +14,9 @@ LIBS =
 CC = g++
 CFLAGS = -std=c++11
 # DFLAGS for development build
-#DFLAGS = -D_DEBUG=true
+DFLAGS = -D_DEBUG=true
+LIBS = -L/usr/local/lib -lfltk
+IFLAGS = -I/usr/local/include
 
 .PHONY: default all clean install
 
@@ -25,7 +27,7 @@ OBJECTS = $(patsubst %.cpp, %.o, $(wildcard *.cpp))
 HEADERS = $(wildcard *.hpp)
 
 %.o: %.cpp $(HEADERS) Makefile
-	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $(IFLAGS) $(DFLAGS) -c $< -o $@
 
 .PRECIOUS: $(TARGET) $(OBJECTS)
 
