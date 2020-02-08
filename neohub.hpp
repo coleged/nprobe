@@ -35,11 +35,11 @@ Classes:
 // Config constants
 
 #ifndef _DEBUG
-#define _DEBUG  false
+#define _DEBUG  true
 #endif
 
 #define MYNAME  "nprobe"
-#define VERSION "2.2.2 November 2019. Ed Cole <colege@gmail.com>"
+#define VERSION "2.2.4b Febuary 2020. Ed Cole <colege@gmail.com>"
 // V2.2 uses nlohmann/jsoncpp
 
 #define NEOHUB_NAME "neohub.rainbow-futures.com"
@@ -63,17 +63,17 @@ Classes:
 #include <vector>
 #include <string>
 #include <ctype.h>
+#include <nlohmann/json.hpp>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
-#include <nlohmann/json.hpp>
 #include <sstream>
 
 #include "Time.hpp"
 
 
-
+class Neohub;   // pre declaration is needed for the sake of order in here
 
 
 // prototypes in functions.cpp
@@ -82,6 +82,13 @@ char *stripString(char *);
 bool readJson(char *, char *);
 char *timestamp();
 bool wneohub(char *);
+
+// prototypes in fl_gui.cpp
+int gui(Neohub *);
+
+
+static char server_name[256];
+
 
 // classes
 
@@ -175,8 +182,6 @@ private:
  
  
  
- 
- 
  }; // Class Event
 
 //*****************************
@@ -196,7 +201,8 @@ public:
     std::string getName();          // returns the name of the device
     
     
-    
+    std::string    curr_temp;
+    std::string    curr_set_temp;
     
     bool    away = false;
     bool    cooling = false;
@@ -375,12 +381,14 @@ public:
     char *getHub(char *cmd);    // takes JSON command and returns result
                                 // in buffer containing JSON response
    
-    void newStat(Stat); // push a Stat object onto the neohub stat vector
+    void newStat(Stat,int); // push/update a Stat object onto the neohub stat vector
     void printStats();  // print out the Stat vector
+    std::vector<Stat>   *getStats();    // returns pointer to stats vector
+    std::vector<Timer>  *getTimers();   // returns pointer to times vector
     
     void printLog();    // prints single line of stat status data
     
-    void newTimer(Timer);   // push a Timer object onto the neohub timer vector
+    void newTimer(Timer,int);   // push/update a Timer object onto the neohub timer vector
     void printTimers();     // print out the Timer vector
     
     std::vector<Stat> stats;    // vector of [thermo]Stat objects
@@ -389,9 +397,9 @@ public:
 private:
     
     
-    char *server_name = nullptr;
+    int neostats = 0;
+    //static char server_name[256];
     int port = 0;
-    
     char buffer[READ_BUFFER_SZ];
     
 

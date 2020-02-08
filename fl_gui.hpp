@@ -9,6 +9,16 @@
 #ifndef fl_gui_hpp
 #define fl_gui_hpp
 
-#include <stdio.h>
+#include <FL/Fl.H>
+#include <FL/Fl_Double_Window.H>
+#include <FL/Fl_Group.H>
+#include <FL/Fl_Scroll.H>
+#include <FL/Fl_Button.H>
+#include <FL/Fl_Input.H>
+#include <FL/Fl_Box.H>
+#include <FL/fl_ask.H>
+#include <string>
+#include <math.h>
+
 
 #endif /* fl_gui_hpp */

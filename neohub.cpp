@@ -24,7 +24,7 @@ Neohub::~Neohub(){}
 
 //*****************************
 void Neohub::setServer(char *ss){
-    server_name = ss;
+    strcpy(server_name, ss);
 }//setServer()
 
 //*****************************
@@ -34,6 +34,10 @@ void Neohub::setPort(int sp){
 
 //*****************************
 void Neohub::init(){
+    
+    int stat_count = 0;
+    int timer_count = 0;
+    
     char *info_buffer;
     char cmd[]="{\"INFO\":0}";
     
@@ -69,15 +73,22 @@ void Neohub::init(){
         if(mode.find("THERMOSTAT") != mode.end()){ // if key THERMOSTAT exists
             if((s.stat_mode.thermostat=mode["THERMOSTAT"].get<bool>())==true){
                 s.device=element["device"];
-                s.current_temperature=stof(element          ["CURRENT_TEMPERATURE"].get<std::string>(),nullptr);
-            s.current_set_temperature=stof(element["CURRENT_SET_TEMPERATURE"].get<std::string>(),nullptr);
+                
+                s.curr_temp = element["CURRENT_TEMPERATURE"].get<std::string>();
+                s.current_temperature=stof(s.curr_temp,nullptr);
+                
+                s.curr_set_temp = element["CURRENT_SET_TEMPERATURE"].get<std::string>();
+                s.current_set_temperature=stof(s.curr_set_temp,nullptr);
+                
                 s.hold_temperature=element["HOLD_TEMPERATURE"].get<int>();
+                
                 s.heating = element["HEATING"].get<bool>();
                 hold_time_s = element["HOLD_TIME"].get<std::string>(); // of the form HH:MM
                 s.hold_time.hours = atoi(hold_time_s.substr(0,hold_time_s.find(":")).c_str());
                 s.hold_time.mins = atoi(hold_time_s.substr(hold_time_s.find(":")+1,hold_time_s.npos).c_str());
                 s.getComfortLevels();
-                newStat(s);                // and push the stat onto vector
+                ++stat_count;
+                newStat(s, stat_count);                // and push the stat onto vector
             }//if
         }
         
@@ -96,14 +107,16 @@ void Neohub::init(){
                     continue; // skip reapeater nodes
                 }
                 t.getTimerEvents();
-                newTimer(t);              // push the timer onto vector
+                ++timer_count;
+                newTimer(t, timer_count);              // push the timer onto vector
             }//if
         }
     }// for
+    neostats = stat_count + timer_count;
 }//init()
 
 //*****************************
-char *Neohub::getHub(char *cmd){ // takes Neohub command and returns result
+char* Neohub::getHub(char *cmd){ // takes Neohub command and returns result
     
     //static char buffer[READ_BUFFER_SZ];   // Moved to private class variable.
                                             // Non static as it has object scope
@@ -122,7 +135,7 @@ char *Neohub::getHub(char *cmd){ // takes Neohub command and returns result
     tv.tv_sec = NEO_SOC_TIMEOUT;
     tv.tv_usec = 0;
     
-    if (server_name == nullptr) server_name = d_server_name;
+    if (server_name[0] == '\0') strcpy(server_name,d_server_name);
     if (port == 0 ) port = d_port;
     
     if(debug) printf("getHub(): connecting to %s:%i\n",server_name,port);
@@ -152,7 +165,7 @@ char *Neohub::getHub(char *cmd){ // takes Neohub command and returns result
     if(debug) printf("getHub(): writing to neohub: %s\n",cmd);
     write(sockfd,stripString(cmd),strlen(stripString(cmd)));
     write(sockfd,"\0\n",2);         // JSON needs \0 terminated string
-        //bzero(buffer,buffer_sz);  // not needed as we are writing '\0' after closing '}' below.
+    bzero(buffer,READ_BUFFER_SZ);  // not needed as we are writing '\0' after closing '}' below.
     buffer[0] = 0;  // but zero out first char as we test this for read failure on
                     // return
     b_point=buffer;
@@ -198,7 +211,8 @@ char *Neohub::getHub(char *cmd){ // takes Neohub command and returns result
         /* an error looks like this
         {"error":"Invalid argument to READ_COMFORT_LEVELS, should be a valid device or array of valid devices"}
         */
-        if( strncmp("{\"error",buffer,7)==0){
+        //if( strncmp("{\"error",buffer,6)==0){
+        if( strncmp(R"({"error")",buffer,6)==0){
             fprintf(stderr,"ERROR Neohub::getHub json command error\n");
             fprintf(stderr,"\tProbably a neostat offline\n");
             return(nullptr);
@@ -208,13 +222,22 @@ char *Neohub::getHub(char *cmd){ // takes Neohub command and returns result
 }//getHub()
 
 //*****************************
-void Neohub::newStat(Stat n){   // push Stat onto vector
-    stats.push_back(n);         // push_back does a copy onto the vector
+void Neohub::newStat(Stat n, int index){
+    if(neostats == 0 ){// initialisation: push device onto vector
+        stats.push_back(n);
+    }else{               // Update
+        std::cout << "update" << std::endl;
+        stats.at(index-1) = n;    // replace existing vector element
+    }//
 }//newStat()
 
 //*****************************
-void Neohub::newTimer(Timer n){ // push Timer onto vector
-    timers.push_back(n);
+void Neohub::newTimer(Timer n, int index){ // push Timer onto vector
+    if(neostats == 0 ){// initialisation: push device onto vector
+        timers.push_back(n);
+    }else{               // Update
+        timers.at(index-1) = n;    // replace existing vector element
+    }//
 }//newTimer()
 
 //*****************************
@@ -240,6 +263,10 @@ void Neohub::printStats(){ // iterate through the stats
     }
 }//printStats()
 
+std::vector<Stat>* Neohub::getStats(){
+    return &stats;
+}
+
 //*****************************
 void Neohub::printTimers(){ // iterate through the timers
     for(auto it = timers.begin(); it != timers.end(); ++it){
@@ -258,6 +285,10 @@ void Neohub::printTimers(){ // iterate through the timers
         std::cout << std::endl;
     }
 }//printTimers()
+
+std::vector<Timer>* Neohub::getTimers(){
+    return &timers;
+}
 
 //*****************************
 void Neohub::printLog(){ // iterate through the stats

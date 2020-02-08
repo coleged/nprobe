@@ -39,6 +39,7 @@ void errorUsage(){
     printf("    -m <mins>    - minutes of hold time (default = 0 mins\n");
     printf("    -f <file>    - apply JSON formatted neohub commands contained in <file>\n");
     
+    // WIP: playing with Time class
     Time a, b, c(23, 45);
     std::cout << a.getNow();
     std::cout << ' ';
@@ -124,6 +125,20 @@ void unholdTimer( Neohub *myHub, std::string unhold_timer){
     }
 }
 
+/*
+ // moved to fl_gui.cpp
+void    gui(Neohub* myHub){
+    std::vector<Stat>* stats = myHub->getStats();
+    for(auto it = stats->begin(); it != stats->end(); ++it){
+        //std::cout << it->device;
+        std::cout << it->getName();
+        std::cout << " : ";
+        std::cout << it->getTemp();
+        std::cout << std::endl;
+    }
+}
+ */
+
 // ************   main()
 //
 int main(int argc, char *argv[]) {
@@ -137,12 +152,14 @@ int main(int argc, char *argv[]) {
     bool log_flag = false;
     bool comfort_flag = false;
     bool event_flag = false;
+    bool gui_flag = false;
     bool todo = false;		// set true if I've been asked to do anything
     
     std::string hold_stat = "";
     std::string zone = "";
     std::string hold_timer = "";
     std::string unhold_timer = "";
+
     
     int hold_temp = DEF_HOLD_TEMP;
     int hold_hours = DEF_HOLD_HOURS;
@@ -152,7 +169,7 @@ int main(int argc, char *argv[]) {
     char *set_server;
     char *cmd_file = nullptr;
     
-    while ((opt = getopt(argc, argv, "CDVlO:o:tcep:s:H:T:h:m:f:z:")) != -1){
+    while ((opt = getopt(argc, argv, "GCDVlO:o:tcep:s:H:T:h:m:f:z:")) != -1){
         switch (opt){
                 
             case 'D': //
@@ -242,6 +259,11 @@ int main(int argc, char *argv[]) {
                 todo = true;
                 break;
                 
+            case 'G': // GUI
+                gui_flag = true;
+                todo = true;
+                break;
+                
             case 'V':
                 printf("%s. Verion %s\n",MYNAME,VERSION);
                 exit(EXIT_SUCCESS);
@@ -263,6 +285,7 @@ int main(int argc, char *argv[]) {
     
     myHub.init();
     
+    if (gui_flag)   gui(&myHub);
     if (temp_flag) myHub.printStats();
     if (log_flag) myHub.printLog();
     if (timer_flag) myHub.printTimers();
