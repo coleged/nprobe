@@ -165,9 +165,8 @@ char* Neohub::getHub(char *cmd){ // takes Neohub command and returns result
     if(debug) printf("getHub(): writing to neohub: %s\n",cmd);
     write(sockfd,stripString(cmd),strlen(stripString(cmd)));
     write(sockfd,"\0\n",2);         // JSON needs \0 terminated string
-    bzero(buffer,READ_BUFFER_SZ);  // not needed as we are writing '\0' after closing '}' below.
-    buffer[0] = 0;  // but zero out first char as we test this for read failure on
-                    // return
+    bzero(buffer,READ_BUFFER_SZ);
+    
     b_point=buffer;
     
     if(debug) printf("getHub(): Reading neohub. ");
@@ -200,7 +199,7 @@ char* Neohub::getHub(char *cmd){ // takes Neohub command and returns result
     
     if(bytes_in == -1){
 	fprintf(stderr,"ERROR Neohub::getHub recv error");
-        exit(EXIT_FAILURE);
+        //exit(EXIT_FAILURE);
     }
         
     if(debug) printf("getHub(): read: %s\n",buffer);

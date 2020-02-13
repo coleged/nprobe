@@ -35,7 +35,7 @@ Classes:
 // Config constants
 
 #ifndef _DEBUG
-#define _DEBUG  true
+#define _DEBUG  false
 #endif
 
 #define MYNAME  "nprobe"

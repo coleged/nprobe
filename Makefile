@@ -14,7 +14,7 @@ LIBS =
 CC = g++
 CFLAGS = -std=c++11
 # DFLAGS for development build
-DFLAGS = -D_DEBUG=true
+#DFLAGS = -D_DEBUG=true
 LIBS = -L/usr/local/lib -lfltk
 IFLAGS = -I/usr/local/include
 

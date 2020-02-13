@@ -45,6 +45,8 @@ friend class    MyScroll;
     
     Stat*   stat;
     
+    char status_label[32];
+    
     
 public:
     //
@@ -93,6 +95,8 @@ public:
     //
     void updateData(){
         
+        std::ostringstream status;
+        
                //Name
                strcpy(id_str,stat->getName().c_str());
                id->label(id_str);
@@ -114,7 +118,23 @@ public:
                set_temp->label(set_temp_str);
         std::cout << set_temp->label() << std::endl;
         
-                redraw();
+        hhours->value("");
+        htemp->value("");
+        
+        if ( stat->holdTimeHours<int>() + stat->holdTimeMins<int>() ){ // time remaining != 0
+                        status << "Holding "
+                          << stat->holdTemp()
+                          << " for "
+                          << stat->holdTimeHours<std::string>()
+                          << ":"
+                          << stat->holdTimeMins<std::string>();
+        }else{
+            status << "Timer control ";
+        }
+        strcpy(status_label, status.str().c_str());
+        stretchBox->label(status_label);
+        
+        redraw();
        }
     
     
@@ -244,6 +264,7 @@ void hold_cb(Fl_Widget*, void *data) {
             std::cout << "holding" << thisStat.getName() << std::endl;
             thisStat.hold(htemp, hhours, hmins);
         }
+       
     }
 }// hold_cb()
 
@@ -258,8 +279,8 @@ int    gui(Neohub* myHub){
     
     std::vector<Stat>* stats = myHub->getStats(); // pointer to vector of Thermostats
     
-    Fl_Double_Window *win = new Fl_Double_Window(600,600);
-        MyScroll *scroll = new MyScroll(10,10,win->w()-20,win->h()-60);
+    Fl_Double_Window *win = new Fl_Double_Window(600,700);
+        MyScroll *scroll = new MyScroll(10,10,win->w()-20,win->h()-160);
             scroll->neohub = myHub;
             scroll->box(FL_BORDER_BOX);
     
@@ -279,12 +300,21 @@ int    gui(Neohub* myHub){
     
         // HOLD and SYNC buttons
         //
-        Fl_Button *hold_butt = new Fl_Button(win->w()-250, win->h()-40, 100, 25, "Hold");
+        Fl_Button *hold_butt = new Fl_Button(win->w()-250, win->h()-140, 100, 25, "Hold");
             hold_butt->callback(hold_cb, (void*)scroll);
     
-        Fl_Button *sync_butt = new Fl_Button(win->w()-150, win->h()-40, 100, 25, "Sync");
+        Fl_Button *sync_butt = new Fl_Button(win->w()-150, win->h()-140, 100, 25, "Sync");
             sync_butt->callback(sync_cb, (void*)scroll);
+    
         
+        Fl_Multi_Browser *console = new Fl_Multi_Browser(10, win->h()-100, win->w()-20, 95, "");
+    console->box(FL_UP_BOX);
+    for (int q = 1; q < 50; ++q){
+        console->add("some text");
+        //console->add("\n");
+        
+    }
+        //console->bottomline();
     
         win->resizable(scroll);
         win->show();
