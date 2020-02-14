@@ -21,6 +21,7 @@ void errorUsage(){
     char myname[] = MYNAME;
 
     printf("USAGE: %s [options] \n",myname);
+    printf("    -G           - Runs GUI window (beta)\n");
     printf("    -t           - Prints temperatures and state of all stats\n");
     printf("    -c           - Prints state of all timers (clocks)\n");
     printf("    -l           - Prints temperatures of all stats in one log line\n");
