@@ -599,7 +599,8 @@ bool Timer::holdOn(int mins){
     Neohub a;
     result = a.getHub(cmd);
     if(result==nullptr){
-        fprintf(stderr, "Hold Failed on %s\n",this->device.c_str());
+        //fprintf(stderr, "Hold Failed on %s\n",this->device.c_str());
+        std::cout << "Hold Failed on " << this->device.c_str() << std::endl;
         return false;
     }
     json R = json::parse(result);
@@ -626,7 +627,8 @@ bool Timer::holdOff(){
     Neohub a;
     result = a.getHub(cmd);
     if(result==nullptr){
-        fprintf(stderr, "Hold Off Failed on %s\n",this->device.c_str());
+        //fprintf(stderr, "Hold Off Failed on %s\n",this->device.c_str());
+        std::cout << "Hold Off Failed on " << this->device.c_str() << std::endl;
         return false;
     }
     json R = json::parse(result);

@@ -365,9 +365,8 @@ int    gui(Neohub* myHub){
             //
             Fl_Multi_Browser *console = new Fl_Multi_Browser(10, win->h()-100, win->w()-20, 95, "");
             console->box(FL_UP_BOX);
-            for (int q = 1; q < 50; ++q){
-                console->add("some text");
-            }
+            
+            console->add(VERSION);
             console->bottomline(console->size());
         
         win->end();

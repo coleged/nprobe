@@ -39,7 +39,7 @@ Classes:
 #endif
 
 #define MYNAME  "nprobe"
-#define VERSION "2.2.4b Febuary 2020. Ed Cole <colege@gmail.com>"
+#define VERSION "nprobe version 2.2.4b Febuary 2020. Ed Cole <colege@gmail.com>"
 // V2.2 uses nlohmann/jsoncpp
 
 #define NEOHUB_NAME "neohub.rainbow-futures.com"

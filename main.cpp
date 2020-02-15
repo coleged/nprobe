@@ -77,7 +77,9 @@ void holdStat(Neohub *myHub, std::string hold_stat, int hold_temp, int hold_hour
         
     }//for
     if(!held){
-        fprintf(stderr,"HOLD FAILED\n");
+        //fprintf(stderr,"HOLD FAILED\n");
+        std::cout << "HOLD FAILED" << std::endl;
+
         exit(EXIT_FAILURE);
     }
 
@@ -100,7 +102,8 @@ void holdTimer( Neohub *myHub, std::string hold_timer, int hold_hours, int hold_
         
     }
     if(!held){
-        fprintf(stderr,"HOLD FAILED\n");
+        //fprintf(stderr,"HOLD FAILED\n");
+        std::cout << "HOLD FAILED" << std::endl;
         exit(EXIT_FAILURE);
     }
 }
@@ -121,7 +124,8 @@ void unholdTimer( Neohub *myHub, std::string unhold_timer){
         
     }
     if(!unheld){
-        fprintf(stderr,"UNHOLD FAILED\n");
+        //fprintf(stderr,"UNHOLD FAILED\n");
+        std::cout << "UNHOLD FAILED" << std::endl;
         exit(EXIT_FAILURE);
     }
 }
