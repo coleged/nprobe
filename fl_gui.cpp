@@ -23,6 +23,10 @@ const int htempW = 25;
 const int defaultHeight = 25;
 
 
+std::ostringstream strCout;     // string stream for cout redirection
+//char    cout_string[1024];
+
+
 //****************************************
 //
 // Class   ScrollItem (a row), one per thermostat
@@ -200,6 +204,7 @@ class MyScroll : public Fl_Scroll {
     int nchild;     // number of children / ScrollItems
     std::vector<ScrollItem*> scrollPtrs;    // pointers to children
     Neohub* neohub;
+    Fl_Browser* console;   // pointer to the console
     
 public:
     //
@@ -251,6 +256,19 @@ public:
     
 };// Class MyScroll
 
+void consoleOutput(Fl_Browser* console){
+    std::stringstream iss(strCout.str());
+    while(iss.good())
+    {
+        std::string SingleLine;
+        getline(iss,SingleLine,'\n');
+        console->add(SingleLine.c_str());
+    }
+    console->bottomline(console->size());
+    
+    console->redraw();
+}
+
 //*************************************
 //      CALLBACKS
 //*************************************
@@ -258,6 +276,8 @@ public:
 // sync_cb()    re-sync gui with neohub
 //
 void sync_cb(Fl_Widget*, void *data) {
+    
+    
     MyScroll *scroll = (MyScroll*)data;
     scroll->neohub->init(); // re-load state from Neohub
     ScrollItem *w;
@@ -268,6 +288,8 @@ void sync_cb(Fl_Widget*, void *data) {
     }
     scroll->redraw();
     
+    consoleOutput(scroll->console);
+
 }//sync_cb
 
 
@@ -312,6 +334,9 @@ void hold_cb(Fl_Widget*, void *data) {
             
         }
     }
+    
+    consoleOutput(scroll->console);
+    
 }// hold_cb()
 
 
@@ -321,6 +346,10 @@ void hold_cb(Fl_Widget*, void *data) {
 //
 
 int    gui(Neohub* myHub){
+    
+    std::streambuf* oldCoutStreamBuf = std::cout.rdbuf();   // save original cout buffer
+    // reinstate with - std::cout.rdbuf( oldCoutStreamBuf ); // reinstate original buffer to cout
+    std::cout.rdbuf( strCout.rdbuf() );                     // assign buffer to cout
     
     std::vector<Stat>* stats = myHub->getStats(); // pointer to vector of Thermostats
     std::vector<Timer>* timers = myHub->getTimers();
@@ -363,11 +392,13 @@ int    gui(Neohub* myHub){
             
             // Console
             //
-            Fl_Multi_Browser *console = new Fl_Multi_Browser(10, win->h()-100, win->w()-20, 95, "");
+            Fl_Browser *console = new Fl_Multi_Browser(10, win->h()-100, win->w()-20, 95, "");
             console->box(FL_UP_BOX);
+            console->has_scrollbar(Fl_Browser_::BOTH);
             
             console->add(VERSION);
             console->bottomline(console->size());
+            scroll->console=console;
         
         win->end();
     
@@ -375,5 +406,6 @@ int    gui(Neohub* myHub){
         win->show();
     
     return(Fl::run());
+    
     
 }// gui()
