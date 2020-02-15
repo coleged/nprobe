@@ -9,57 +9,12 @@
 // See: readme.txt
 
 #include "neohub.hpp"
-
-
+void errorUsage();
 
 bool debug = _DEBUG;
 
-// ************   errorUsage()
-//
-void errorUsage(){
-    
-    char myname[] = MYNAME;
 
-    printf("USAGE: %s [options] \n",myname);
-    printf("    -G           - Runs GUI window (beta)\n");
-    printf("    -t           - Prints temperatures and state of all stats\n");
-    printf("    -c           - Prints state of all timers (clocks)\n");
-    printf("    -l           - Prints temperatures of all stats in one log line\n");
-    printf("    -C           - Prints comfort levels of stats. All stats unless -z used\n");
-    printf("    -e           - Prints timed events of all timers or use -z for just one\n");
-    printf("    -D           - Debug. Prints debug detail\n");
-    printf("    -V           - Prints version number and exits\n");
-    printf("    -O <timer>   - Timer overide on\n");
-    printf("    -o <timer>   - Timer overide off\n");
-    printf("    -s <server>  - Specify hostname of Neohub device (default neohub)\n");
-    printf("    -p <port>    - Specify port of Neohub device (default 4242)\n");
-    printf("    -H <stat>    - Hold thermostat\n");
-    printf("    -z <zone>    - Specify the zone for -C | -e option\n");
-    printf("    -T <temp>    - Temperature for hold (defaut = 24C)\n");
-    printf("    -h <hours>   - Hours of hold time (default = 1 hour)\n");
-    printf("    -m <mins>    - minutes of hold time (default = 0 mins\n");
-    printf("    -f <file>    - apply JSON formatted neohub commands contained in <file>\n");
-    
-    // WIP: playing with Time class
-    Time a, b, c(23, 45);
-    std::cout << a.getNow();
-    std::cout << ' ';
-    std::cout << b.getNow();
-    std::cout << ' ';
-    std::cout << c.remaining();
-    std::cout << std::endl;
-    
-    
-    std::cout << a.asStr();
-    std::cout << ' ';
-    std::cout << b;
-    std::cout << ' ';
-    std::cout << c;
-    std::cout << ' ';
-    std::cout << std::endl;
 
-    
-}
 
 // ************   holdStat()
 //
@@ -130,19 +85,7 @@ void unholdTimer( Neohub *myHub, std::string unhold_timer){
     }
 }
 
-/*
- // moved to fl_gui.cpp
-void    gui(Neohub* myHub){
-    std::vector<Stat>* stats = myHub->getStats();
-    for(auto it = stats->begin(); it != stats->end(); ++it){
-        //std::cout << it->device;
-        std::cout << it->getName();
-        std::cout << " : ";
-        std::cout << it->getTemp();
-        std::cout << std::endl;
-    }
-}
- */
+
 
 // ************   main()
 //

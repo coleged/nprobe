@@ -225,7 +225,7 @@ void Neohub::newStat(Stat n, int index){
     if(neostats == 0 ){// initialisation: push device onto vector
         stats.push_back(n);
     }else{               // Update
-        std::cout << "update" << std::endl;
+        //std::cout << "update" << std::endl;
         stats.at(index-1) = n;    // replace existing vector element
     }//
 }//newStat()

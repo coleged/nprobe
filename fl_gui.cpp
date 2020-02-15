@@ -24,7 +24,9 @@ const int defaultHeight = 25;
 
 
 std::ostringstream strCout;     // string stream for cout redirection
-//char    cout_string[1024];
+                                // used to display std::cout calls to the
+                                // GUI console window (a Fl_Browser widget)
+
 
 
 //****************************************
@@ -126,7 +128,7 @@ public:
         if(isStat) strcpy(id_str,stat->getName().c_str());
             else   strcpy(id_str,timer->getName().c_str());
         id->label(id_str);
-        std::cout << id->label() << " ";    // TBD
+        //std::cout << id->label() << " ";    // TBD
                
         //Temperature for stat
         temp_str[0] = '\0';
@@ -138,23 +140,23 @@ public:
             if (stat->isOn()){ // if heat is on set background ro RED
                temperature->color(FL_RED);
             }
-            std::cout << temperature->label() << " ";   // TBD
+            //std::cout << temperature->label() << " ";   // TBD
             // Stat Set Temperature
             strcpy(set_temp_str,stat->curr_set_temp.c_str());
             set_temp->label(set_temp_str);
-            std::cout << set_temp->label() << std::endl;    // TBD
+            //std::cout << set_temp->label() << std::endl;    // TBD
         }else{
             // Timer "Temperature"
             if (timer->isOn()){
                 strcpy(temp_str,"ON");
                 temperature->label(temp_str);
                 temperature->color(FL_RED);
-                std::cout << "ON" << std::endl; // TBD
+                //std::cout << "ON" << std::endl; // TBD
             }else{
                
                 strcpy(temp_str,"OFF");
                 temperature->label(temp_str);
-                std::cout << "OFF" << std::endl; // TBD
+                //std::cout << "OFF" << std::endl; // TBD
             }
             temperature->label(temp_str);
         }
@@ -256,8 +258,16 @@ public:
     
 };// Class MyScroll
 
+// consoleOutput()
+//
+// - displays the contents of the redirected cout buffer to the console window
+//
 void consoleOutput(Fl_Browser* console){
-    std::stringstream iss(strCout.str());
+    std::stringstream iss(strCout.str()); // copy redirected cout buffer into stringstream
+    strCout.str("");
+    strCout.clear();                      // clear the cout buffer
+    
+    // add the string stream to the console line by line
     while(iss.good())
     {
         std::string SingleLine;
@@ -281,11 +291,14 @@ void sync_cb(Fl_Widget*, void *data) {
     MyScroll *scroll = (MyScroll*)data;
     scroll->neohub->init(); // re-load state from Neohub
     ScrollItem *w;
+    std::cout << "Syncing with Neohub [";
     for ( int t=0; t < scroll->nchild; t++ ) {
         w = (ScrollItem *)scroll->child(t);
-        std::cout << "syncing " << w->id->label() << " ";   // TBD
+        //std::cout << "syncing " << w->id->label() << " ";   // TBD
+        std::cout << ".";
         w->updateData();
     }
+    std::cout << "] complete" << std::endl;
     scroll->redraw();
     
     consoleOutput(scroll->console);
@@ -314,10 +327,10 @@ void hold_cb(Fl_Widget*, void *data) {
             htemp = atoi(thisItem->htemp->value());
             hhours = atoi(thisItem->hhours->value());
             if((htemp > 0) || (hhours > 0)){
-                std::cout << thisItem->id_str << std::endl; // TBD
+                //std::cout << thisItem->id_str << std::endl; // TBD
                 if (htemp == 0) htemp = DEF_HOLD_TEMP;
                 if (hhours == 0 ) hhours = DEF_HOLD_HOURS;
-                std::cout << "holding" << thisStat->getName() << std::endl; // TBD
+                //std::cout << "holding" << thisStat->getName() << std::endl; // TBD
                 thisStat->hold(htemp, hhours, hmins);
             }
         }else{                  // HOLD Timer
@@ -325,10 +338,10 @@ void hold_cb(Fl_Widget*, void *data) {
             //htemp = atoi(thisItem->htemp->value());
             hhours = atoi(thisItem->hhours->value());
             if(hhours > 0){
-                std::cout << thisItem->id_str << std::endl; // TBD
+                //std::cout << thisItem->id_str << std::endl; // TBD
                 //if (htemp == 0) htemp = DEF_HOLD_TEMP;
                 if (hhours == 0 ) hhours = DEF_HOLD_HOURS;
-                std::cout << "holding" << thisTimer->getName() << std::endl; // TBD
+                //std::cout << "holding" << thisTimer->getName() << std::endl; // TBD
                 thisTimer->holdOn(hhours * 60);
             }
             
