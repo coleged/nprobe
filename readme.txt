@@ -1,4 +1,11 @@
 
+nprobe
+
+Command line tool and GUI app to monitor and control a mesh of
+Heatmiser Neostat devices through a Neohub.
+
+Developed on OSX and Ubuntu. GUI tested under OSX
+
 /******************************************************************
  
 Rewrite of neoprobe using classes and looking more like C++ than C
@@ -7,7 +14,7 @@ Rewrite of neoprobe using classes and looking more like C++ than C
  Feb 2020	  FLTK based GUI
 
 USAGE: nprobe [options] 
-    -G           - Runs GUI window (beta)
+    -G           - Runs GUI window
     -t           - Prints temperatures and state of all stats
     -c           - Prints state of all timers (clocks)
     -l           - Prints temperatures of all stats in one log line
