@@ -44,10 +44,15 @@ void Neohub::init(){
     if(debug) printf("init():initialising hub\n");
     
     info_buffer = getHub(cmd);       // get info from hub
-    
-    if(info_buffer == nullptr){     // getHub failed
-        fprintf(stderr,"ERROR: Neohub::init() Neohub::getHub() failed\n");
-        exit(EXIT_FAILURE);
+    int c = 1;
+    while ( (info_buffer = getHub(cmd)) == nullptr){
+        if (c > INIT_RETRY){
+            fprintf(stderr,"ERROR: Neohub::init() Neohub::getHub() failed. Giving up.\n");
+            exit(EXIT_FAILURE);
+        }
+        std::cout << "Neohub::init() Neohub::getHub() failed. Retrying" << std::endl;
+        ++c;
+        usleep(INIT_RETRY_BACKOFF * 1e6);
     }
     
     json root = json::parse(info_buffer);
@@ -118,8 +123,6 @@ void Neohub::init(){
 //*****************************
 char* Neohub::getHub(char *cmd){ // takes Neohub command and returns result
     
-    //static char buffer[READ_BUFFER_SZ];   // Moved to private class variable.
-                                            // Non static as it has object scope
     char d_server_name[] = NEOHUB_NAME;
     int d_port = NEOHUB_PORT;
     
@@ -198,8 +201,8 @@ char* Neohub::getHub(char *cmd){ // takes Neohub command and returns result
     if(debug) printf(" >> %i bytes read\n", total_bytes);
     
     if(bytes_in == -1){
-	fprintf(stderr,"ERROR Neohub::getHub recv error");
-        //exit(EXIT_FAILURE);
+        std::cout << "ERROR Neohub::getHub recv error" << std::endl;
+            return(nullptr);
     }
         
     if(debug) printf("getHub(): read: %s\n",buffer);
@@ -222,27 +225,26 @@ char* Neohub::getHub(char *cmd){ // takes Neohub command and returns result
 
 //*****************************
 void Neohub::newStat(Stat n, int index){
-    if(neostats == 0 ){// initialisation: push device onto vector
+    if(neostats == 0 ){             // initialisation: push device onto vector
         stats.push_back(n);
-    }else{               // Update
-        //std::cout << "update" << std::endl;
-        stats.at(index-1) = n;    // replace existing vector element
+    }else{                          // Update / resync
+        stats.at(index-1) = n;      // replace existing vector element
     }//
 }//newStat()
 
 //*****************************
 void Neohub::newTimer(Timer n, int index){ // push Timer onto vector
-    if(neostats == 0 ){// initialisation: push device onto vector
+    if(neostats == 0 ){             // initialisation: push device onto vector
         timers.push_back(n);
-    }else{               // Update
-        timers.at(index-1) = n;    // replace existing vector element
+    }else{                          // Update
+        timers.at(index-1) = n;     // replace existing vector element
     }//
 }//newTimer()
 
 //*****************************
-void Neohub::printStats(){ // iterate through the stats
+void Neohub::printStats(){
+    // iterate through the stats
     for(auto it = stats.begin(); it != stats.end(); ++it){
-        //std::cout << it->device;
         std::cout << it->getName();
         std::cout << " : ";
         std::cout << it->getTemp();
@@ -420,14 +422,6 @@ void Stat::printComfortLevels(){
         for(std::string event : events){   // // ) ::=  ["HH:MM",(int)temp]
             std::cout << " " << event << " ";
             std::cout << comfortLevels[period_idx][event_idx].getTimeOn();
-            
-            /*
-            std::cout << "[";
-            std::cout << (60 * comfortLevels[period_idx][event_idx].getHoursOn()+
-                          comfortLevels[period_idx][event_idx].getMinsOn());
-            std::cout << "]";
-            */
-            
             std::cout << " ";
             std::cout << comfortLevels[period_idx][event_idx].getTemp();
             ++event_idx;
@@ -524,7 +518,6 @@ void Comfort::print(){
     printf("%s %i",on.asStr().c_str(),temp);
     //printf("%s[%i] %i",timeOn.c_str(),60 * getHoursOn()+getMinsOn(),temp); // DEBUG VERSION
 }//print()
-
 
 int Comfort::getTemp(){
     return (temp);

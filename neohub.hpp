@@ -49,6 +49,8 @@ Classes:
 
 #define SOC_BUFFER_SZ 4096      // Socket buffer to communication with Neohub
 #define NEO_SOC_TIMEOUT 2       // Socket timeout for Neohub comms - in seconds
+#define INIT_RETRY 3            // attempts at initial init with neohub
+#define INIT_RETRY_BACKOFF 2    // seconds
 
 #define DEF_HOLD_TEMP 24
 #define DEF_HOLD_HOURS 1
@@ -375,21 +377,21 @@ public:
     ~Neohub();
     
     void init();                // probe the hub for connected devices
-    void setServer(char *ss);   
-    void setPort(int sp);
+    void setServer(char * server_name);
+    void setPort(int port_no);
     
     char *getHub(char *cmd);    // takes JSON command and returns result
                                 // in buffer containing JSON response
    
-    void newStat(Stat,int); // push/update a Stat object onto the neohub stat vector
-    void printStats();  // print out the Stat vector
+    void newStat(Stat s ,int index); // push/update a Stat object onto the neohub stat vector
+    void printStats();                  // print out the Stat vector
     std::vector<Stat>   *getStats();    // returns pointer to stats vector
     std::vector<Timer>  *getTimers();   // returns pointer to times vector
     
-    void printLog();    // prints single line of stat status data
+    void printLog();            // prints single line of stat status data
     
     void newTimer(Timer,int);   // push/update a Timer object onto the neohub timer vector
-    void printTimers();     // print out the Timer vector
+    void printTimers();         // print out the Timer vector
     
     std::vector<Stat> stats;    // vector of [thermo]Stat objects
     std::vector<Timer> timers;  // vector of timer objects
@@ -397,9 +399,10 @@ public:
 private:
     
     
-    int neostats = 0;
-    //static char server_name[256];
-    int port = 0;
+    int neostats = 0;       // set to stat_count + timer_count once all Neostat devices
+                            // have been discovered. Used to establish if a call to init()
+                            // is an primary initialisation or a subsequent resync
+    int port = 0;           // TCP/IP port the Neohub listens on
     char buffer[READ_BUFFER_SZ];
     
 

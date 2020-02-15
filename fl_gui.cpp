@@ -272,7 +272,9 @@ void consoleOutput(Fl_Browser* console){
     {
         std::string SingleLine;
         getline(iss,SingleLine,'\n');
-        console->add(SingleLine.c_str());
+        if(!SingleLine.empty()){
+            console->add(SingleLine.c_str());
+        }
     }
     console->bottomline(console->size());
     
@@ -300,7 +302,6 @@ void sync_cb(Fl_Widget*, void *data) {
     }
     std::cout << "] complete" << std::endl;
     scroll->redraw();
-    
     consoleOutput(scroll->console);
 
 }//sync_cb
