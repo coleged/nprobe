@@ -40,6 +40,7 @@ Classes:
 
 #define MYNAME  "nprobe"
 #define VERSION "nprobe version 2.2.4b Febuary 2020. Ed Cole <colege@gmail.com>"
+#define GUI_TITLE "nprobe - Rainbow Wood House heating system"
 // V2.2 uses nlohmann/jsoncpp
 
 #define NEOHUB_NAME "neohub.rainbow-futures.com"
@@ -55,6 +56,8 @@ Classes:
 #define DEF_HOLD_TEMP 24
 #define DEF_HOLD_HOURS 1
 #define DEF_HOLD_MINS 0
+
+#define HEART_BEAT 120           // seconds between GUI resyncs with Neohub
 
 // includes
 

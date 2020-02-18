@@ -56,8 +56,8 @@ class ScrollItem : public Fl_Group {
     Stat*   stat;           // pointer to the Stat object associated with the row
     Timer*  timer;
     bool isStat;            // true if item is a thermostat, false if it's a timer.
-    
     char status_label[LEN_STATUS_LABEL];  // text of the stretch box
+    bool showme = true;       // show item in Scroll if true, hide if false
    
 public:
     //
@@ -110,6 +110,13 @@ public:
             stretchBox->box(FL_UP_BOX);
             stretchBox->align(FL_ALIGN_INSIDE | FL_ALIGN_LEFT);
             resizable(stretchBox);
+        
+            // this doesn't work. It hides the item but leaves virtical postitioning intact
+            if(!showme){
+                hide();
+            }else{
+                show();
+            }
         
         end();
     }// constructor
@@ -276,7 +283,7 @@ void consoleOutput(Fl_Browser* console){
             console->add(SingleLine.c_str());
         }
     }
-    console->bottomline(console->size());
+    console->bottomline(console->size()+1);
     
     console->redraw();
 }
@@ -285,9 +292,13 @@ void consoleOutput(Fl_Browser* console){
 //      CALLBACKS
 //*************************************
 
+
+
+
+
 // sync_cb()    re-sync gui with neohub
 //
-void sync_cb(Fl_Widget*, void *data) {
+void sync_cb(Fl_Widget* wgt, void *data) {
     
     
     MyScroll *scroll = (MyScroll*)data;
@@ -306,11 +317,18 @@ void sync_cb(Fl_Widget*, void *data) {
 
 }//sync_cb
 
+// heartbeat_cb()
+//
+void heartbeat_cb(void* w) {
+  sync_cb((Fl_Widget*)w,(MyScroll*)w);
+  Fl::repeat_timeout(HEART_BEAT, heartbeat_cb,(MyScroll*)w);    // retrigger timeout
+}
+
 
 // hold_cb()    iterate thru rows (scrollItems) and if either hold-time or hold-temp
 //              have been filled, hold the stat
 //
-void hold_cb(Fl_Widget*, void *data) {
+void hold_cb(Fl_Widget* w, void *data) {
     
     MyScroll* scroll = (MyScroll*)data;
     ScrollItem*  thisItem;
@@ -350,14 +368,60 @@ void hold_cb(Fl_Widget*, void *data) {
     }
     
     consoleOutput(scroll->console);
+    sync_cb(w, data);
     
 }// hold_cb()
+
+void exit_cb(void* w) {
+    exit(0);
+}
+
+void menu_cb(void* w) {
+  // menu callback template
+    
+}
+
+void about_cb(void* w) {
+  const char *text =
+  "This text is pretty long, but will be\n"
+  "concatenated into just a single string.\n"
+  "The disadvantage is that you have to quote\n"
+  "each part, and newlines must be literal as\n"
+  "usual.";
+    
+    fl_message(text);
+    
+}
+
+
+
+void set_m_items(Fl_Menu_Bar* menu_bar){
+    Fl_Menu_Item menuitems[] = {
+        { "File", 0, 0, 0, FL_SUBMENU },
+        { "Exit", FL_COMMAND + 'q', (Fl_Callback *)exit_cb},
+        { 0 },
+        { "View", 0, 0, 0, FL_SUBMENU },
+        { "Thermostats", FL_COMMAND + 's', (Fl_Callback *)menu_cb, 0, FL_MENU_DIVIDER },
+        { "Timers", FL_COMMAND + 't', (Fl_Callback *)menu_cb },
+        { 0 },
+        { "&Help", 0, 0, 0, FL_SUBMENU },
+        { "&Help", FL_COMMAND + 'h', (Fl_Callback *)menu_cb, menu_bar },
+        { "&About", FL_COMMAND + 'a', (Fl_Callback *)about_cb, menu_bar },
+        { 0 },
+        { 0 }
+    };
+    menu_bar->copy(menuitems);
+}
+
+
 
 
 //***************************************************
 //      The GUI function
-//
-//
+//      The GUI function
+//      The GUI function
+//      The GUI function
+//***************************************************
 
 int    gui(Neohub* myHub){
     
@@ -371,10 +435,16 @@ int    gui(Neohub* myHub){
     // Window
     //
     Fl_Double_Window *win = new Fl_Double_Window(600,700);
+        win->label(GUI_TITLE);
+    
+        // Menu
+        //
+        Fl_Menu_Bar *menu_bar = new Fl_Menu_Bar(0,0,600,25);
+        set_m_items(menu_bar);
     
         // Scroll
         //
-        MyScroll *scroll = new MyScroll(10,10,win->w()-20,win->h()-160);
+        MyScroll *scroll = new MyScroll(10,30,win->w()-20,win->h()-165);
             scroll->neohub = myHub;
             scroll->box(FL_BORDER_BOX);
 
@@ -398,15 +468,15 @@ int    gui(Neohub* myHub){
         
             // HOLD and SYNC buttons
             //
-            Fl_Button *hold_butt = new Fl_Button(win->w()-250, win->h()-140, 100, 25, "Hold");
+            Fl_Button *hold_butt = new Fl_Button(win->w()-250, win->h()-128, 100, 25, "Hold");
                 hold_butt->callback(hold_cb, (void*)scroll);
         
-            Fl_Button *sync_butt = new Fl_Button(win->w()-150, win->h()-140, 100, 25, "Sync");
+            Fl_Button *sync_butt = new Fl_Button(win->w()-150, win->h()-128, 100, 25, "Sync");
                 sync_butt->callback(sync_cb, (void*)scroll);
             
             // Console
             //
-            Fl_Browser *console = new Fl_Multi_Browser(10, win->h()-100, win->w()-20, 95, "");
+            Fl_Browser *console = new Fl_Browser(10, win->h()-100, win->w()-20, 95, "");
             console->box(FL_UP_BOX);
             console->has_scrollbar(Fl_Browser_::BOTH);
             
@@ -418,6 +488,9 @@ int    gui(Neohub* myHub){
     
         win->resizable(scroll);
         win->show();
+    
+        // timeout callback to periodically resync with neohub
+        Fl::add_timeout(HEART_BEAT, heartbeat_cb, (void*)scroll);
     
     return(Fl::run());
     

@@ -384,7 +384,7 @@ void Stat::getComfortLevels(){
     Neohub a;
     response=a.getHub((char *)cmd.c_str());
     if(response==nullptr){
-        fprintf(stderr,"Failed to get comfort levels for %s\n",this->device.c_str());
+        std::cout << "Failed to get comfort levels for" << this->device.c_str() << std::endl;
     }else{
         if(debug) printf("  >>%s\n",response);
         json root = json::parse(response);  // parse response into JSON object
@@ -453,7 +453,7 @@ bool Stat::hold(int temp, int hours, int min){
     Neohub a;
     result = a.getHub(cmd);
     if(result==nullptr){
-        fprintf(stderr, "Hold Failed on %s\n",this->device.c_str());
+        std::cout << "Hold Failed on " << this->device.c_str() << std::endl;
         return false;
     }
     json R = json::parse(result);
@@ -646,7 +646,7 @@ void Timer::getTimerEvents(){
     response=a.getHub((char *)cmd.c_str());
     //std::cout << response << std::endl;
     if(response==nullptr){
-        fprintf(stderr,"Failed to get timer events for %s\n",this->device.c_str());
+        std::cout << "Failed to get timer events for " << this->device.c_str() << std::endl;
     }else{
         json root = json::parse(response);  // parse response into JSON object
         json zone = root[this->device];

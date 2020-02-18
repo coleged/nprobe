@@ -91,6 +91,19 @@ void unholdTimer( Neohub *myHub, std::string unhold_timer){
 //
 int main(int argc, char *argv[]) {
     
+    /*
+    // some code to explore the launch options when involked using MacOS to open
+    // an app bundle from the finder
+    //  see the finder launch guard below
+    FILE* tmp_file = fopen("/tmp/nprobe_cmd.txt", "w");
+    for(int g = 0; g < argc; ++g){
+        fprintf(tmp_file,"[%s],",argv[g]);
+       //printf("[%i]%s ",g,argv[g]);
+    }
+    fprintf(tmp_file,"\n");
+    fclose(tmp_file);
+     */
+    
     Neohub myHub;
     
     int opt;
@@ -116,6 +129,12 @@ int main(int argc, char *argv[]) {
 
     char *set_server;
     char *cmd_file = nullptr;
+    
+    // finder launch guard
+    if (strncmp("-psn_", argv[1], 5)==0){
+        // we have been involked as a MacOS X app using open
+        strcpy(argv[1], "-G");
+    }
     
     while ((opt = getopt(argc, argv, "GCDVlO:o:tcep:s:H:T:h:m:f:z:")) != -1){
         switch (opt){
