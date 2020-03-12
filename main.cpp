@@ -13,9 +13,6 @@ void errorUsage();
 
 bool debug = _DEBUG;
 
-
-
-
 // ************   holdStat()
 //
 void holdStat(Neohub *myHub, std::string hold_stat, int hold_temp, int hold_hours, int hold_mins){
