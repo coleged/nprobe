@@ -27,8 +27,6 @@ std::ostringstream strCout;     // string stream for cout redirection
                                 // used to display std::cout calls to the
                                 // GUI console window (a Fl_Browser widget)
 
-
-
 //****************************************
 //
 // Class   ScrollItem (a row), one per thermostat
@@ -38,37 +36,39 @@ class ScrollItem : public Fl_Group {
     friend int      gui(Neohub*);
     friend void     hold_cb(Fl_Widget*, void*);
     friend void     sync_cb(Fl_Widget*, void *);
+    friend void     showStats_cb(Fl_Widget*, void *);
+    friend void     showTimers_cb(Fl_Widget*, void *);
     friend class    MyScroll;
     
-    Fl_Box *id;             // Thermostat ID i.e. it's name
-    char id_str[32];
-    Fl_Box *temperature;    // Actual temp recorded by thermostat
-    char temp_str[5];
-    bool timerON;
-    Fl_Box* set_temp;       // Set temperature of thermostat
-    char set_temp_str[5];
-    Fl_Input *hhours;       // HOLD time in hours
-    char hhours_str[5];
-    Fl_Input *htemp;        // HOLD temperature in DegC
-    char htemp_str[5];
-    Fl_Box *stretchBox;     // Information box displaying thermostat status
+    Fl_Box*     id;             // Thermostat ID i.e. it's name
+    char        id_str[32];
+    Fl_Box*     temperature;    // Actual temp recorded by thermostat
+    char        temp_str[5];
+    bool        timerON;
+    Fl_Box*     set_temp;       // Set temperature of thermostat
+    char        set_temp_str[5];
+    Fl_Input*   hhours;         // HOLD time in hours
+    char        hhours_str[5];
+    Fl_Input*   htemp;          // HOLD temperature in DegC
+    char        htemp_str[5];
+    Fl_Box*     infoBox;     // Information box displaying thermostat status
     
-    Stat*   stat;           // pointer to the Stat object associated with the row
-    Timer*  timer;
-    bool isStat;            // true if item is a thermostat, false if it's a timer.
-    char status_label[LEN_STATUS_LABEL];  // text of the stretch box
-    bool showme = true;       // show item in Scroll if true, hide if false
+    Stat*       stat;           // pointer to the Stat object associated with the row
+    Timer*      timer;
+    bool        isStat;            // true if item is a thermostat, false if it's a timer.
+    char        status_label[LEN_STATUS_LABEL];  // text of the stretch box
+    bool        showme = true;       // show item in Scroll if true, hide if false
    
 public:
     //
     // ScrollItem   CONSTRUCTOR
     //
     ScrollItem(int X, int Y, int W, int H, const char* L=0,bool st=true) : Fl_Group(X,Y,W,H) {
-        int stretchXpos,stretchWidth;
+        int infoXpos,infoWidth;
         int posOffset = 0;  // horizontal offset for widget placement
         begin();
         
-            // Fixed width box - The Name (or id) for the thermostat
+            // Fixed width box - The Name (or id) for the neostat
             //
             id = new Fl_Box(X,Y,idWidth,defaultHeight,L);
             id->box(FL_UP_BOX);
@@ -79,7 +79,7 @@ public:
             temperature = new Fl_Box(X+posOffset,Y,temperatureWidth,defaultHeight,"");
             temperature->box(FL_UP_BOX);
             posOffset+= temperatureWidth; // X 2 to make room for label on left
-            if(st){ // A Stat; we dont have this box for a timer
+            if(st){         // A Stat; we dont have this box for a timer
                 //
                 // Fixed width box  Set temperature
                 //
@@ -93,7 +93,7 @@ public:
             hhours = new Fl_Input(X+posOffset,Y,hhoursW,defaultHeight,"HOLD");
             hhours->box(FL_UP_BOX);
             posOffset+= 3 * hhoursW;
-            if(st){ // A Stat; we dont have this box for a timer
+            if(st){         // A Stat; we dont have this box for a timer
                 //
                 // Input  HOLD temperature in DegC
                 //
@@ -104,19 +104,12 @@ public:
             //
             // Stretchy box. Fills remaining width. Displays status of thermostat
             //
-            stretchXpos = X + posOffset;
-            stretchWidth = W - posOffset;
-            stretchBox = new Fl_Box(stretchXpos,Y,stretchWidth,defaultHeight, "");
-            stretchBox->box(FL_UP_BOX);
-            stretchBox->align(FL_ALIGN_INSIDE | FL_ALIGN_LEFT);
-            resizable(stretchBox);
-        
-            // this doesn't work. It hides the item but leaves virtical postitioning intact
-            if(!showme){
-                hide();
-            }else{
-                show();
-            }
+            infoXpos = X + posOffset;
+            infoWidth = W - posOffset;
+            infoBox = new Fl_Box(infoXpos,Y,infoWidth,defaultHeight, "");
+            infoBox->box(FL_UP_BOX);
+            infoBox->align(FL_ALIGN_INSIDE | FL_ALIGN_LEFT);
+            resizable(infoBox);
         
         end();
     }// constructor
@@ -193,7 +186,7 @@ public:
         
         strncpy(status_label, status.str().c_str(),LEN_STATUS_LABEL);
         status_label[LEN_STATUS_LABEL - 1] = '\0'; // in case strncpy() overrun
-        stretchBox->label(status_label);
+        infoBox->label(status_label);
         
         redraw();
        }
@@ -208,12 +201,16 @@ class MyScroll : public Fl_Scroll {
     
     friend void sync_cb(Fl_Widget*, void *);
     friend void hold_cb(Fl_Widget*, void *);
+    friend void showStats_cb(Fl_Widget*, void *);
+    friend void showTimers_cb(Fl_Widget*, void *);
     friend  int gui(Neohub*);
     
-    int nchild;     // number of children / ScrollItems
+    int         nchild;                     // number of children / ScrollItems
+    bool        visible;
+    Neohub*     neohub;
+    Fl_Browser* console;                    // pointer to the console
+    
     std::vector<ScrollItem*> scrollPtrs;    // pointers to children
-    Neohub* neohub;
-    Fl_Browser* console;   // pointer to the console
     
 public:
     //
@@ -221,7 +218,19 @@ public:
     //
     MyScroll(int X, int Y, int W, int H, const char* L=0) : Fl_Scroll(X,Y,W,H,L) {
         nchild = 0;
+        visible = false;
     }
+    
+    // toggle between show() and hide()
+    void toggle(){
+       if( visible ){
+           hide();
+       }else{
+           show();
+       }
+       visible = !visible;
+    }
+       
     
     //  MyScroll    resize()
     //
@@ -240,26 +249,26 @@ public:
     // Append new scrollitem to bottom
     //     Note: An Fl_Pack would be a good way to do this too
     //
-    ScrollItem* AddItem(NeoStatBase* neostat, bool st) {
+    ScrollItem* AddRow(NeoStatBase* neostat, bool st) {
         
         int X = x() + 1,
             Y = y() - yposition() + (nchild*defaultHeight) + 1,
             W = w() - 20,            // -20: compensate for vscroll bar
             H = defaultHeight;
        
-        ScrollItem* thisItem = new ScrollItem(X,Y,W,H,"",st);
+        ScrollItem* thisRow = new ScrollItem(X,Y,W,H,"",st);
         if(st){
-            thisItem->stat = (Stat *)neostat;  // establish pointer to Neostat object
-            thisItem->isStat = true;
+            thisRow->stat = (Stat *)neostat;  // establish pointer to Neostat object
+            thisRow->isStat = true;
         }else{
-            thisItem->timer = (Timer *)neostat;
-            thisItem->isStat = false;
+            thisRow->timer = (Timer *)neostat;
+            thisRow->isStat = false;
         }
-        thisItem->updateData();     // populate item with values from Stat
-        add(thisItem);
+        thisRow->updateData();     // populate item with values from Stat
+        add(thisRow);
         redraw();
         nchild++;
-        return thisItem;
+        return thisRow;
         
     }// AddItem()
     
@@ -293,35 +302,47 @@ void consoleOutput(Fl_Browser* console){
 //*************************************
 
 
-
-
-
 // sync_cb()    re-sync gui with neohub
 //
 void sync_cb(Fl_Widget* wgt, void *data) {
     
+    Neohub *myHub;
+    Fl_Browser* console;
+    // scrolls is a pointer to a vector of scroll pointers
+    std::vector<MyScroll*>  scrolls = *((std::vector<MyScroll*>*) data);
+    MyScroll *firstScroll = (MyScroll*)scrolls[1];
+    //
+    myHub = firstScroll->neohub;
+    myHub->init(); // re-load state from Neohub
     
-    MyScroll *scroll = (MyScroll*)data;
-    scroll->neohub->init(); // re-load state from Neohub
+    //MyScroll *scroll = (MyScroll*)data;
+    MyScroll *scroll;
+    
     ScrollItem *w;
     std::cout << "Syncing with Neohub [";
-    for ( int t=0; t < scroll->nchild; t++ ) {
-        w = (ScrollItem *)scroll->child(t);
-        //std::cout << "syncing " << w->id->label() << " ";   // TBD
-        std::cout << ".";
-        w->updateData();
+    for( auto it = scrolls.begin(); it != scrolls.end(); ++it){
+        scroll = *it;
+        console = scroll->console;
+        for ( int t=0; t < scroll->nchild; t++ ) {
+            w = (ScrollItem *)scroll->child(t);
+            std::cout << "syncing " << w->id->label() << " ";   // TBD
+            std::cout << ".";
+            w->updateData();
+        }
+        scroll->redraw();
     }
     std::cout << "] complete" << std::endl;
-    scroll->redraw();
-    consoleOutput(scroll->console);
+    
+    //scroll->toggle();
+    consoleOutput(console);
 
 }//sync_cb
 
 // heartbeat_cb()
 //
 void heartbeat_cb(void* w) {
-  sync_cb((Fl_Widget*)w,(MyScroll*)w);
-  Fl::repeat_timeout(HEART_BEAT, heartbeat_cb,(MyScroll*)w);    // retrigger timeout
+  sync_cb((Fl_Widget*)w,w);
+  Fl::repeat_timeout(HEART_BEAT, heartbeat_cb,w);    // retrigger timeout
 }
 
 
@@ -330,47 +351,92 @@ void heartbeat_cb(void* w) {
 //
 void hold_cb(Fl_Widget* w, void *data) {
     
-    MyScroll* scroll = (MyScroll*)data;
+    // data is a pointer to a vector of scroll pointers
+    std::vector<MyScroll*>  scrolls = *((std::vector<MyScroll*>*) data);
+    
     ScrollItem*  thisItem;
+    MyScroll* thisScroll;
     Stat* thisStat;
     Timer* thisTimer;
+    Fl_Browser* console;
     
     int hhours;
     int hmins = 0;
     int htemp;
     
-    for(auto it = scroll->scrollPtrs.begin(); it != scroll->scrollPtrs.end(); ++it){
-        thisItem = *it;
-        if (thisItem->isStat){ // HOLD Stat
-            thisStat = &(*(thisItem->stat));
-            htemp = atoi(thisItem->htemp->value());
-            hhours = atoi(thisItem->hhours->value());
-            if((htemp > 0) || (hhours > 0)){
-                //std::cout << thisItem->id_str << std::endl; // TBD
-                if (htemp == 0) htemp = DEF_HOLD_TEMP;
-                if (hhours == 0 ) hhours = DEF_HOLD_HOURS;
-                //std::cout << "holding" << thisStat->getName() << std::endl; // TBD
-                thisStat->hold(htemp, hhours, hmins);
+    for( auto scroll = scrolls.begin(); scroll != scrolls.end(); ++scroll){
+        thisScroll = *scroll;  // pointer to scroll on the vector
+        console = thisScroll->console;
+        for(auto it = thisScroll->scrollPtrs.begin(); it != thisScroll->scrollPtrs.end(); ++it){
+            thisItem = *it;   // pointer to a row on the scroll
+            if (thisItem->isStat){ // HOLD Stat
+                //thisStat = &(*(thisItem->stat));
+                thisStat = thisItem->stat;
+                htemp = atoi(thisItem->htemp->value());
+                hhours = atoi(thisItem->hhours->value());
+                if((htemp > 0) || (hhours > 0)){
+                    //std::cout << thisItem->id_str << std::endl; // TBD
+                    if (htemp == 0) htemp = DEF_HOLD_TEMP;
+                    if (hhours == 0 ) hhours = DEF_HOLD_HOURS;
+                    //std::cout << "holding" << thisStat->getName() << std::endl; // TBD
+                    thisStat->hold(htemp, hhours, hmins);
+                }
+            }else{                  // HOLD Timer
+                //thisTimer = &(*(thisItem->timer));
+                thisTimer = thisItem->timer;
+                //htemp = atoi(thisItem->htemp->value());
+                hhours = atoi(thisItem->hhours->value());
+                if(hhours > 0){
+                    //std::cout << thisItem->id_str << std::endl; // TBD
+                    //if (htemp == 0) htemp = DEF_HOLD_TEMP;
+                    if (hhours == 0 ) hhours = DEF_HOLD_HOURS;
+                    //std::cout << "holding" << thisTimer->getName() << std::endl; // TBD
+                    thisTimer->holdOn(hhours * 60);
+                }
             }
-        }else{                  // HOLD Timer
-            thisTimer = &(*(thisItem->timer));
-            //htemp = atoi(thisItem->htemp->value());
-            hhours = atoi(thisItem->hhours->value());
-            if(hhours > 0){
-                //std::cout << thisItem->id_str << std::endl; // TBD
-                //if (htemp == 0) htemp = DEF_HOLD_TEMP;
-                if (hhours == 0 ) hhours = DEF_HOLD_HOURS;
-                //std::cout << "holding" << thisTimer->getName() << std::endl; // TBD
-                thisTimer->holdOn(hhours * 60);
-            }
-            
         }
     }
     
-    consoleOutput(scroll->console);
+    consoleOutput(console);
+    
     sync_cb(w, data);
     
 }// hold_cb()
+
+void showStats_cb(Fl_Widget* w, void *data){
+    MyScroll* scroll = (MyScroll*)data;
+    int nchild {1}; // local scope
+    scroll->clear(); // clears scroll
+    for ( ScrollItem* item : scroll->scrollPtrs){
+        if( item->isStat){
+            item->x(scroll->x()+1);
+            item->y(scroll->y() - scroll->yposition() + (nchild*defaultHeight) + 1);
+            item->w(scroll->w() - 20);
+            item->h(defaultHeight);
+            scroll->add(item);
+            //scroll->redraw();
+            ++nchild;
+        }
+    }
+}
+
+void showTimers_cb(Fl_Widget* w, void *data){
+    MyScroll* scroll = (MyScroll*)data;
+    int nchild {1}; // local scope
+    scroll->clear(); // clears scroll
+    scroll->init_sizes();
+    for ( ScrollItem* item : scroll->scrollPtrs){
+        if( !item->isStat){
+            item->x(scroll->x()+1);
+            item->y(scroll->y() - scroll->yposition() + (nchild*defaultHeight) + 1);
+            item->w(scroll->w() - 20);
+            item->h(defaultHeight);
+            scroll->add(item);
+            //scroll->redraw();
+            ++nchild;
+        }
+    }
+}
 
 void exit_cb(void* w) {
     exit(0);
@@ -395,14 +461,14 @@ void about_cb(void* w) {
 
 
 
-void set_m_items(Fl_Menu_Bar* menu_bar){
+void set_m_items(Fl_Menu_Bar* menu_bar, MyScroll* scroll){
     Fl_Menu_Item menuitems[] = {
         { "File", 0, 0, 0, FL_SUBMENU },
         { "Exit", FL_COMMAND + 'q', (Fl_Callback *)exit_cb},
         { 0 },
         { "View", 0, 0, 0, FL_SUBMENU },
-        { "Thermostats", FL_COMMAND + 's', (Fl_Callback *)menu_cb, 0, FL_MENU_DIVIDER },
-        { "Timers", FL_COMMAND + 't', (Fl_Callback *)menu_cb },
+        { "Thermostats", FL_COMMAND + 's', (Fl_Callback *)showStats_cb, scroll, FL_MENU_DIVIDER },
+        { "Timers", FL_COMMAND + 't', (Fl_Callback *)showTimers_cb, scroll },
         { 0 },
         { "&Help", 0, 0, 0, FL_SUBMENU },
         { "&Help", FL_COMMAND + 'h', (Fl_Callback *)menu_cb, menu_bar },
@@ -425,54 +491,81 @@ void set_m_items(Fl_Menu_Bar* menu_bar){
 
 int    gui(Neohub* myHub){
     
+    //reinstate this when youve fixed hold/sync buttons - ed 12/3/20
+    // grab std::cout buffer for use in the console
     std::streambuf* oldCoutStreamBuf = std::cout.rdbuf();   // save original cout buffer
     // reinstate with - std::cout.rdbuf( oldCoutStreamBuf ); // reinstate original buffer to cout
     std::cout.rdbuf( strCout.rdbuf() );                     // assign buffer to cout
     
+    
+    
     std::vector<Stat>* stats = myHub->getStats(); // pointer to vector of Thermostats
     std::vector<Timer>* timers = myHub->getTimers();
+    
+    std::vector<MyScroll*> scrolls;                 // vector of pointers to scrolls
     
     // Window
     //
     Fl_Double_Window *win = new Fl_Double_Window(600,700);
         win->label(GUI_TITLE);
-    
         // Menu
         //
-        Fl_Menu_Bar *menu_bar = new Fl_Menu_Bar(0,0,600,25);
-        set_m_items(menu_bar);
-    
-        // Scroll
-        //
-        MyScroll *scroll = new MyScroll(10,30,win->w()-20,win->h()-165);
-            scroll->neohub = myHub;
-            scroll->box(FL_BORDER_BOX);
+        
+        // TABS
+        Fl_Tabs *tabs = new Fl_Tabs(10,30,win->w()-20,win->h()-220);
+        // THERMOSTAT TAB
+        Fl_Group *statTab = new Fl_Group(10,50,win->w()-20,win->h()-220," Thermostats ");
+            statTab->begin();
+                MyScroll *scrollStats = new MyScroll(10,50,win->w()-20,win->h()-220);
+        
+                scrollStats->neohub = myHub;
+                scrollStats->box(FL_BORDER_BOX);
 
-            // Scroll Items
-            //
-            ScrollItem* i;
-            // Stats
-            Stat* thisStat;
-            for(auto it = stats->begin(); it != stats->end(); ++it){
-                    thisStat = &(*it); // thisStat is pointer to element in stats vector
-                    i = scroll->AddItem(thisStat, true);
-                    scroll->scrollPtrs.push_back(i); // push/copy pointer this scroll item
-            }
+                // Scroll Items
+                //
+                ScrollItem* i;
+                // Stats
+                Stat* thisStat;
+                for(auto it = stats->begin(); it != stats->end(); ++it){
+                        thisStat = &(*it); // thisStat is pointer to element in stats vector
+                        i = scrollStats->AddRow(thisStat, true);
+                        scrollStats->scrollPtrs.push_back(i); // push/copy pointer this scroll item
+                }
+            
+            statTab->end();
+            // TIMER TAB
+            Fl_Group *TimerTab = new Fl_Group(10,50,win->w()-20,win->h()-220," Timers ");
+            MyScroll *scrollTimers = new MyScroll(10,50,win->w()-20,win->h()-220);
+            scrollTimers->neohub = myHub;
             Timer* thisTimer;
-            for(auto it = timers->begin(); it != timers->end(); ++it){
-                    thisTimer = &(*it); // thisTimer is pointer to element in timers vector
-                    i = scroll->AddItem(thisTimer, false);
-                    scroll->scrollPtrs.push_back(i); // push/copy pointer this scroll item
-            }
-            scroll->end();
+                for(auto it = timers->begin(); it != timers->end(); ++it){
+                        thisTimer = &(*it); // thisTimer is pointer to element in timers vector
+                        i = scrollTimers->AddRow(thisTimer, false);
+                        scrollTimers->scrollPtrs.push_back(i); // push/copy pointer this scroll item
+                }
+                scrollTimers->end();
+                scrollTimers->toggle(); // will show the scroll
+    
+            
+            TimerTab->end();
+            tabs->end();
+            // Menu
+            //
+            Fl_Menu_Bar *menu_bar = new Fl_Menu_Bar(0,0,600,25);
+            set_m_items(menu_bar,scrollStats); //??
         
             // HOLD and SYNC buttons
             //
+            //Fl_Button *hold_butt = new Fl_Button(win->w()-250, win->h()-128, 100, 25, "Hold");
+              //  hold_butt->callback(hold_cb, (void*)scrollStats);
+    
+    
             Fl_Button *hold_butt = new Fl_Button(win->w()-250, win->h()-128, 100, 25, "Hold");
-                hold_butt->callback(hold_cb, (void*)scroll);
+                    hold_butt->callback(hold_cb, (void*)&scrolls);
         
+            // need to sort this out
             Fl_Button *sync_butt = new Fl_Button(win->w()-150, win->h()-128, 100, 25, "Sync");
-                sync_butt->callback(sync_cb, (void*)scroll);
+                sync_butt->callback(sync_cb, (void*)&scrolls);
             
             // Console
             //
@@ -482,17 +575,28 @@ int    gui(Neohub* myHub){
             
             console->add(VERSION);
             console->bottomline(console->size());
-            scroll->console=console;
-        
+            scrollStats->console=console;
+            scrollTimers->console=console;
+    
+            scrolls.push_back(scrollStats);
+            scrolls.push_back(scrollTimers);
+    
         win->end();
     
-        win->resizable(scroll);
+        win->resizable(scrollStats);
         win->show();
     
         // timeout callback to periodically resync with neohub
-        Fl::add_timeout(HEART_BEAT, heartbeat_cb, (void*)scroll);
+        Fl::add_timeout(HEART_BEAT, heartbeat_cb, (void*)&scrolls);
     
-    return(Fl::run());
+    int ret = Fl::run();    // it shouldn't return from run()
+    
+    // but if it does
+    
+    // reinstate this when hold/sync buttons fixed - 12/3/20
+    std::cout.rdbuf( oldCoutStreamBuf ); // reinstate original buffer to cout
+    std::cout << "window terminated" << std::endl;
+    return(ret);
     
     
 }// gui()

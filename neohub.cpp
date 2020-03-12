@@ -35,8 +35,8 @@ void Neohub::setPort(int sp){
 //*****************************
 void Neohub::init(){
     
-    int stat_count = 0;
-    int timer_count = 0;
+    int stat_count {0};
+    int timer_count {0};
     
     char *info_buffer;
     char cmd[]="{\"INFO\":0}";
@@ -109,7 +109,7 @@ void Neohub::init(){
                
                 // nuke repeater nodes here with continue (for loop) if substr of name matches.
                 if(t.device.substr(0,8) == "repeater"){
-                    continue; // skip reapeater nodes
+                    continue; // skip repeater nodes
                 }
                 t.getTimerEvents();
                 ++timer_count;
@@ -119,6 +119,7 @@ void Neohub::init(){
     }// for
     neostats = stat_count + timer_count;
 }//init()
+
 
 //*****************************
 char* Neohub::getHub(char *cmd){ // takes Neohub command and returns result

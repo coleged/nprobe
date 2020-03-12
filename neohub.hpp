@@ -121,8 +121,8 @@ public:
     std::string getTimeOn();
     std::string getTimeOff();
     
-    void setTimeOn(int h, int m);
-    void setTimeOff(int h, int m);
+    void setTimeOn(const int h, const int m);
+    void setTimeOff(const int h, const int m);
     
     int getHoursOn();
     int getMinsOn();
@@ -380,6 +380,7 @@ public:
     ~Neohub();
     
     void init();                // probe the hub for connected devices
+    void init2();
     void setServer(char * server_name);
     void setPort(int port_no);
     

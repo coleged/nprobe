@@ -1,10 +1,10 @@
 
 nprobe
 
-Command line tool and GUI app to monitor and control a mesh of
+Command line tool and (FLTK) GUI app to monitor and control a mesh of
 Heatmiser Neostat devices through a Neohub.
 
-Developed on OSX and Ubuntu. GUI tested under OSX
+Developed on OSX and Ubuntu. GUI only tested under OSX
 
 /******************************************************************
  
