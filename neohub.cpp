@@ -433,6 +433,65 @@ void Stat::printComfortLevels(){
     
 }//printComfortLevels()
 
+bool Stat::setComfortLevels(Comfort levels[2][4]){
+    
+    // newComfortLevels is pointer to a [2][4] array of objects
+    // cmd of the form ......
+    /*
+    JSON COMMAND LOOKS LIKE THIS
+ {"SET_COMFORT_LEVELS":
+   [
+    {"monday":
+      {"wake":["07:00",21],"leave":["09:00",21],"return":["16:00",21],"sleep":["22:00",21]},
+     "sunday":
+      {"wake":["07:00",21],"leave":["09:00",21],"return":["16:00",21],"sleep":["22:00",21]}
+    },
+     ["Guest Room"]
+   ]
+  }
+     */
+    
+    std::string periods[] = {"monday","sunday"};
+    std::string events[] = {"wake","leave","return","sleep"};
+    int event_idx = 0;
+    int period_idx = 0;
+    
+    std::stringstream cmd;
+    std::string cmd_s;
+    cmd << R"({"SET_COMFORT_LEVELS":[{)";
+    
+    for(std::string period : periods){
+        cmd << R"(")" << period << R"(":{)";
+        event_idx = 0;
+        for(std::string event : events){   // // ) ::=  ["HH:MM",(int)temp]
+            cmd << R"(")" << event << R"(":[")";
+            cmd << levels[period_idx][event_idx].getTimeOn();
+            cmd << R"(",)";
+            cmd << levels[period_idx][event_idx].getTemp();
+            cmd << R"(])";
+            if ( event_idx < 3){
+                cmd << R"(,)";
+            }
+            ++event_idx;
+        }
+        cmd << R"(})";
+        std::cout << std::endl;
+        if (period_idx == 0){
+            cmd << R"(,)";
+        }
+        ++period_idx;
+    }
+    cmd << R"(},[")" << this->getName();
+    
+    cmd << R"("]]})";
+    
+    cmd_s = cmd.str();
+    
+    std::cout << cmd_s << std::endl;
+    
+    return true;
+}
+
 bool Stat::hold(int temp, int hours, int min){
     /*
      JSON Command is of the form
@@ -478,8 +537,16 @@ void Switch::setTimeOn(int h, int m){
     on.setTime(h,m);
 }
 
+void Switch::setTimeOn(Time time){
+    on = time;
+}
+
 void Switch::setTimeOff(int h, int m){
     off.setTime(h,m);
+}
+
+void Switch::setTimeOff(Time time){
+    off = time;
 }
 
 std::string Switch::getTimeOn(){
@@ -514,6 +581,11 @@ void Comfort::setComfort(std::string stime, int stemp){
     on.setTime(h,m); // on is of class Time
     temp = stemp;
 }//setComfort()
+
+void Comfort::setComfort(Time stime, int stemp){
+    on = stime;
+    temp = stemp;
+}
 
 void Comfort::print(){
     printf("%s %i",on.asStr().c_str(),temp);

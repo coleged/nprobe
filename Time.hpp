@@ -28,12 +28,18 @@ public:
     Time(int h, int m);
     ~Time();
     
-    void    setTime(int h, int m);
+    //copy constructor
+    Time(const Time &t);
+    
+    bool    setTime(int h, int m);
+    bool    setTime(std::string t);
     
     int     getHours();
     int     getMins();
     
     std::string asStr();        // returns time as string "HH:MM"
+    
+    bool    check();
     
     std::string remaining();    // returns time remaining from now until time
     std::string getNow();       // returns current time "HH:MM"

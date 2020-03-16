@@ -40,7 +40,7 @@ class ScrollItem : public Fl_Group {
     friend void     showTimers_cb(Fl_Widget*, void *);
     friend class    MyScroll;
     
-    Fl_Box*     id;             // Thermostat ID i.e. it's name
+    Fl_Button*     id;             // Thermostat ID i.e. it's name
     char        id_str[32];
     Fl_Box*     temperature;    // Actual temp recorded by thermostat
     char        temp_str[5];
@@ -70,7 +70,7 @@ public:
         
             // Fixed width box - The Name (or id) for the neostat
             //
-            id = new Fl_Box(X,Y,idWidth,defaultHeight,L);
+            id = new Fl_Button(X,Y,idWidth,defaultHeight,L);
             id->box(FL_UP_BOX);
             posOffset+=idWidth;
             //
@@ -128,6 +128,7 @@ public:
         if(isStat) strcpy(id_str,stat->getName().c_str());
             else   strcpy(id_str,timer->getName().c_str());
         id->label(id_str);
+        
         //std::cout << id->label() << " ";    // TBD
                
         //Temperature for stat
@@ -185,6 +186,7 @@ public:
             status << "Neostat programming";
         }
         
+        
         strncpy(status_label, status.str().c_str(),LEN_STATUS_LABEL);
         status_label[LEN_STATUS_LABEL - 1] = '\0'; // in case strncpy() overrun
         infoBox->label(status_label);
@@ -194,6 +196,7 @@ public:
     
 }; // Class ScrollItem
 
+void editStat_cb(Fl_Widget* w, void *data);
 //***************************************
 //
 // Class MyScroll
@@ -255,6 +258,8 @@ public:
             thisRow->timer = (Timer *)neostat;
             thisRow->isStat = false;
         }
+        // install callback on id button
+        thisRow->id->callback(editStat_cb, (void *)neostat);
         thisRow->updateData();     // populate item with values from Stat
         add(thisRow);
         redraw();
@@ -264,6 +269,143 @@ public:
     }// AddItem()
     
 };// Class MyScroll
+
+void saveComfort_cb(Fl_Widget* w, void* data);
+//************************************
+// EditWindow              EDIT WINDOW
+class EditWindow : public Fl_Double_Window{
+    
+    friend void saveComfort_cb(Fl_Widget* w, void* data);
+    
+    std::string     name;
+    Comfort         newComfortLevel[2][4];
+    char*           period_label[2];
+    char*           ev_label[4];
+    Fl_Box*         per_box[2];
+    Fl_Box*         ev_box[4];
+    Fl_Input*       ev_time[2][4];
+    char*           ev_time_str[2][4];
+    Fl_Input*       ev_temp[2][4];
+    char*           ev_temp_str[2][4];
+    Fl_Button*      save;
+    
+public:
+    
+    std::string message;
+    
+    
+    // Constructor
+    EditWindow(Stat* stat, int W, int H): Fl_Double_Window(W,H){
+        
+        message = "hello World";
+        
+        int hpos {10};
+        int hmargin {100};
+        int vpos {10};
+        int width {100};
+        int depth {25};
+        
+        
+        int iwidth = width/2;
+        
+        std::string time {"HH:MM"};
+        int temp {20};
+        
+        begin();
+        
+        std::string periods[] = {"monday","sunday"};
+        std::string events[] = {"wake","leave","return","sleep"};
+        int event_idx;
+        int period_idx =0;
+        label(stat->getName().c_str());
+        
+        for(std::string period : periods){
+            period_label[period_idx] = new char[period.length()];
+            strcpy(period_label[period_idx],period.c_str());
+            per_box[period_idx] = new Fl_Box(hpos+hmargin,vpos,width,depth,period_label[period_idx]);
+                per_box[period_idx]->box(FL_UP_BOX);
+                per_box[period_idx]->show();
+            event_idx = 0;
+            for(std::string event : events){   // // ) ::=  ["HH:MM",(int)temp]
+                vpos+=depth;
+                if(period_idx == 0){
+                    ev_label[event_idx] = new char[16];
+                    strcpy(ev_label[event_idx],events[event_idx].c_str());
+                    ev_box[event_idx] = new Fl_Box(hpos,vpos,width,depth,ev_label[event_idx]);
+                        ev_box[event_idx]->box(FL_UP_BOX);
+                        ev_box[event_idx]->show();
+                }else{
+                    hpos=10;
+                }
+                hpos+=width + width * period_idx;
+                time = stat->comfortLevels[period_idx][event_idx].getTimeOn();
+                ev_time_str[period_idx][event_idx] = new char[8];
+                strcpy(ev_time_str[period_idx][event_idx], time.c_str());
+                
+                temp = stat->comfortLevels[period_idx][event_idx].getTemp();
+                ev_temp_str[period_idx][event_idx] = new char[8];
+                sprintf(ev_temp_str[period_idx][event_idx],"%i",temp);
+                
+                newComfortLevel[period_idx][event_idx].setComfort(time, temp);
+                        
+                ev_time[period_idx][event_idx] = new Fl_Input(hpos,vpos,iwidth,depth);
+                    ev_time[period_idx][event_idx]->box(FL_UP_BOX);
+                    ev_time[period_idx][event_idx]->value(ev_time_str[period_idx][event_idx]);
+                    ev_time[period_idx][event_idx]->show();
+                hpos+=iwidth;
+                
+                ev_temp[period_idx][event_idx] = new Fl_Input(hpos,vpos,iwidth,depth);
+                    ev_temp[period_idx][event_idx]->box(FL_UP_BOX);
+                    ev_temp[period_idx][event_idx]->value(ev_temp_str[period_idx][event_idx]);
+                    ev_temp[period_idx][event_idx]->show();
+                ++event_idx;
+                hpos = 10;
+            }
+            ++period_idx;
+            vpos = 10;
+            hpos += width;
+            std::cout << std::endl;
+        }
+        
+        // save button
+        save = new Fl_Button(220,150,50,25,"Save");
+        save->box(FL_UP_BOX);
+        save->callback(saveComfort_cb, stat);
+        save->show();
+        
+        end();
+        show();
+
+    };
+    
+    ~EditWindow(){
+        
+        std::cout << "destructor" << std::endl;
+        
+        // these deletes throw exception ??????
+        
+        
+        delete[] period_label[2];
+        delete[] ev_label[4];
+    
+      /*
+        
+        delete[] ev_box[4];
+
+        delete[] ev_time[2][4];
+        delete[] ev_time_str[2][4];
+        delete[] ev_temp[2][4];
+        delete[] ev_temp_str[2][4];
+        
+        for( auto widget : per_box){
+            Fl::delete_widget(widget);
+        }
+       
+       */
+
+    }
+};
+
 
 // consoleOutput()
 //
@@ -291,6 +433,95 @@ void consoleOutput(Fl_Browser* console){
 //*************************************
 //      CALLBACKS
 //*************************************
+
+void wquit_cb(Fl_Widget* w, void *data){
+    EditWindow* window = (EditWindow*)w;
+    std::cout << "wquit_cb called" << std::endl;
+    Fl::delete_widget(window);
+    
+}
+
+void editStat_cb(Fl_Widget* w, void *data){
+    
+    // There is a memory leak in the edit window.
+    
+    // data will be neostatbase*
+    Stat* stat = (Stat *)data;
+    EditWindow *win = new EditWindow(stat,320,180);
+    
+    // the callback is called when the window manager is used to
+    // close the window - i.e. hits the red spot top left
+    // Without this FLTK just does a hide() with exit(0) if it's the
+    // last window
+    win->callback(wquit_cb);
+    
+}
+
+void saveComfort_cb(Fl_Widget* w, void* data){
+    
+    EditWindow* win = (EditWindow*)w->parent();
+    Stat* stat = (Stat*)data;
+    
+    Comfort newComfort[2][4];
+    
+    std::cout << "stat " << stat->getName() << std::endl;   // TBD
+    std::cout << win->message << std::endl;                 // TBD
+    
+    std::string periods[] = {"monday","sunday"};
+    std::string events[] = {"wake","leave","return","sleep"};
+    int event_idx = 0;
+    int period_idx = 0;
+    
+    char time_ch[16];
+    std::string time_str;
+    char temp_ch[16];
+    int temp_int;
+    
+    bool data_ok = true;
+    
+    Time t;
+    
+    for(std::string period : periods){
+        
+        event_idx = 0;
+        for(std::string event : events){   // // ) ::=  ["HH:MM",(int)temp]
+            // ev_time[2][4] ev_temp[2][4]
+            
+            strcpy(time_ch, win->ev_time[period_idx][event_idx]->value());
+            time_str = time_ch;
+            if( ! t.setTime(time_str)){
+                // bad format time
+                data_ok = false;
+                win->ev_time[period_idx][event_idx]->color(FL_RED);
+            }else{
+                win->ev_time[period_idx][event_idx]->color(FL_WHITE);
+            }
+            win->ev_time[period_idx][event_idx]->redraw();
+            
+            strcpy(temp_ch, win->ev_temp[period_idx][event_idx]->value());
+            temp_int = atoi(temp_ch);
+            if( (temp_int > 30) || (temp_int < 10)){
+                data_ok = false;
+                win->ev_temp[period_idx][event_idx]->color(FL_RED);
+            }else{
+                win->ev_temp[period_idx][event_idx]->color(FL_WHITE);
+            }
+            win->ev_temp[period_idx][event_idx]->redraw();
+            
+            newComfort[period_idx][event_idx].setComfort(t, temp_int);
+           
+            ++event_idx;
+        }
+        
+        ++period_idx;
+    }
+    if(data_ok){
+        stat->setComfortLevels(newComfort);
+    }
+    
+}
+
+
 
 
 // sync_cb()    re-sync gui with neohub
@@ -480,12 +711,13 @@ void set_m_items(Fl_Menu_Bar* menu_bar, MyScroll* scroll){
 
 int    gui(Neohub* myHub){
     
+#ifdef USE_CONSOLE
     //reinstate this when youve fixed hold/sync buttons - ed 12/3/20
     // grab std::cout buffer for use in the console
     std::streambuf* oldCoutStreamBuf = std::cout.rdbuf();   // save original cout buffer
     // reinstate with - std::cout.rdbuf( oldCoutStreamBuf ); // reinstate original buffer to cout
     std::cout.rdbuf( strCout.rdbuf() );                     // assign buffer to cout
-    
+#endif
     
     
     std::vector<Stat>* stats = myHub->getStats(); // pointer to vector of Thermostats
@@ -579,8 +811,9 @@ int    gui(Neohub* myHub){
     int ret = Fl::run();    // it shouldn't return from run()
     
     // but if it does
-    
+#ifdef USE_CONSOLE
     std::cout.rdbuf( oldCoutStreamBuf ); // reinstate original buffer to cout
+#endif
     std::cout << "window terminated" << std::endl;
     return(ret);
     

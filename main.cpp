@@ -82,6 +82,27 @@ void unholdTimer( Neohub *myHub, std::string unhold_timer){
     }
 }
 
+// timeTest()
+//
+// quick hack to test Time class.
+// to be deleted
+
+void timeTest(){
+    Time t;
+    std::string input;
+    
+    while(true){
+        std::cout << "Enter time string: ";
+        std::cin >> input;
+        if (! t.setTime(input)){
+            std::cout << "Bad time string" << std::endl;
+        }else{
+            std::cout << "OK: " << t.asStr() << std::endl;
+        }
+        
+    }
+}
+
 
 
 // ************   main()
@@ -123,8 +144,12 @@ int main(int argc, char *argv[]) {
         strcpy(argv[1], "-G");
     }
     
-    while ((opt = getopt(argc, argv, "GCDVlO:o:tcep:s:H:T:h:m:f:z:")) != -1){
+    while ((opt = getopt(argc, argv, "qGCDVlO:o:tcep:s:H:T:h:m:f:z:")) != -1){
         switch (opt){
+                
+            case 'q':   // timeTest TDB
+                timeTest();
+                exit(0);    // timeTest never returns
                 
             case 'D': //
                 debug = true;

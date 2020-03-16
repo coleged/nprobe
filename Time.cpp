@@ -5,6 +5,8 @@
 //  Created by Ed Cole on 23/11/2019.
 //  Copyright © 2019 colege. All rights reserved.
 //
+//
+// A class to deal with time represented notionally in the form "hh:mm"
 
 #include "Time.hpp"
 
@@ -20,12 +22,67 @@ Time::Time(int h, int m){
     }
 Time::~Time(){};
 
+// copy constructor
+Time::Time(const Time &t){
+        hours = t.hours;
+        mins = t.mins;
+}
+
 
 //*****************************************
-void Time::setTime(int h, int m){
+bool Time::setTime(int h, int m){
     hours = h;
     mins = m;
-}//setHoursMins
+    if(check()){
+        return true;
+    }
+    return false;
+}//setTime
+
+bool isDigits(const std::string &str)
+{
+    return str.find_first_not_of("0123456789") == std::string::npos;
+}
+
+bool Time::setTime(std::string t){
+    // t = HH:MM or hhmm
+    std::string h;
+    std::string m;
+    if(t.length() < 4) return false;
+    if(t.find(":") == std::string::npos){
+        //hhmm
+        h = t.substr(0,2);
+        m = t.substr(2,2);
+    }else{
+        h = t.substr(0,2);
+        m = t.substr(3,2);
+    }
+    // check that all characters are digits and convert to ints or bail
+    if (h.find_first_not_of("0123456789") == std::string::npos){
+        hours = stoi(h);
+    }else return false;
+    if (m.find_first_not_of("0123456789") == std::string::npos){
+        mins = stoi(m);
+    }else return false;
+    
+    if(check()){
+        return true;
+    }
+    
+    return false;
+}//setTime
+
+
+
+bool Time::check(){       // returns true is time is good
+    bool ret = true;
+    if(hours > 23) ret = false;
+    if(hours < 0 ) ret = false;
+    if(mins > 60 ) ret = false;
+    if(mins < 0 ) ret = false;
+    
+    return ret;
+}
 
 
 //*****************************************

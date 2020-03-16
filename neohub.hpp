@@ -38,6 +38,9 @@ Classes:
 #define _DEBUG  false
 #endif
 
+// comment out this line to disable console and send all output to stdout
+//#define USE_CONSOLE
+
 #define MYNAME  "nprobe"
 #define VERSION "nprobe version 2.2.4b Febuary 2020. Ed Cole <colege@gmail.com>"
 #define GUI_TITLE "nprobe - Rainbow Wood House heating system"
@@ -59,6 +62,9 @@ Classes:
 
 #define HEART_BEAT 120           // seconds between GUI resyncs with Neohub
 
+enum period_day_t {Monday,Sunday};
+enum period_hour_t {Wake,Leave,Return,Sleep};
+
 // includes
 
 #include <stdio.h>
@@ -74,6 +80,7 @@ Classes:
 #include <netinet/in.h>
 #include <netdb.h>
 #include <sstream>
+#include "fl_gui.hpp"
 
 #include "Time.hpp"
 
@@ -122,7 +129,9 @@ public:
     std::string getTimeOff();
     
     void setTimeOn(const int h, const int m);
+    void setTimeOn(Time time);
     void setTimeOff(const int h, const int m);
+    void setTimeOff(Time time);
     
     int getHoursOn();
     int getMinsOn();
@@ -146,13 +155,16 @@ private:
 class Comfort: public Switch{
     
     friend class Stat;
+    friend void editStat_cb(Fl_Widget* w, void *data);
     
 public:
     Comfort();
     Comfort(std::string time,int temp);
+    Comfort(Time time, int temp);
     ~Comfort();
     
     void setComfort(std::string time,int temp);
+    void setComfort(Time stime, int stemp);
     void print(); // debug method
     
     int getTemp();
@@ -310,6 +322,9 @@ template<> std::string NeoStatBase::holdTimeMins();
 class Stat: public NeoStatBase{     // A heatmiser Neostat
     
 friend class Neohub;
+friend class EditWindow;
+friend class EditWindow2;
+//friend void editStat_cb(Fl_Widget* , void *);
     
 public:
     Stat();
@@ -326,6 +341,7 @@ public:
     
     void getComfortLevels(); // gets comfort from neohub -> memory private perhaps?
     void printComfortLevels();
+    bool setComfortLevels(Comfort levels[2][4]);  // writes comfort levels to neohub
     
     
     float holdTemp();
