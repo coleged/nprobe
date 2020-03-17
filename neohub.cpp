@@ -59,7 +59,9 @@ void Neohub::init(){
     json element,mode,hold_time;
     
     Stat s;
+    s.hub = this;
     Timer t;
+    t.hub = this;
     
     std::string hold_time_s = "00:00";
     
@@ -489,7 +491,25 @@ bool Stat::setComfortLevels(Comfort levels[2][4]){
     
     std::cout << cmd_s << std::endl;
     
-    return true;
+    char* cmd_c = new char[cmd_s.length()];
+    strcpy(cmd_c, cmd_s.c_str());
+    
+    // apply new comfort levels to hub
+    char* result = hub->getHub(cmd_c);
+    
+    if(result==nullptr){
+        std::cout << "Failed to set comfort levels " << this->device.c_str() << std::endl;
+        return false;
+    }
+    //std::cout << result << std::endl;
+    json R = json::parse(result);
+    std::cout << R["result"].get<std::string>() << std::endl;
+    
+    if(R["result"].get<std::string>() == "comfort levels set"){
+        return true;
+    }
+    return false;
+
 }
 
 bool Stat::hold(int temp, int hours, int min){

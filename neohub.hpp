@@ -39,7 +39,7 @@ Classes:
 #endif
 
 // comment out this line to disable console and send all output to stdout
-//#define USE_CONSOLE
+#define USE_CONSOLE
 
 #define MYNAME  "nprobe"
 #define VERSION "nprobe version 2.2.4b Febuary 2020. Ed Cole <colege@gmail.com>"
@@ -216,10 +216,11 @@ public:
     ~NeoStatBase();
     
     std::string getName();          // returns the name of the device
-    
-    
+
     std::string    curr_temp;
     std::string    curr_set_temp;
+    
+    Neohub* hub;
     
     bool    away = false;
     bool    cooling = false;

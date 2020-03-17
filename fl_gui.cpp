@@ -462,6 +462,9 @@ void saveComfort_cb(Fl_Widget* w, void* data){
     EditWindow* win = (EditWindow*)w->parent();
     Stat* stat = (Stat*)data;
     
+    // need to work out how to poke console output at end of this
+    //Fl_Browser* console = win->console;
+    
     Comfort newComfort[2][4];
     
     std::cout << "stat " << stat->getName() << std::endl;   // TBD
