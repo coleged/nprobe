@@ -40,7 +40,7 @@ class ScrollItem : public Fl_Group {
     friend void     showTimers_cb(Fl_Widget*, void *);
     friend class    MyScroll;
     
-    Fl_Button*     id;             // Thermostat ID i.e. it's name
+    Fl_Button*  id;             // Thermostat ID i.e. it's name
     char        id_str[32];
     Fl_Box*     temperature;    // Actual temp recorded by thermostat
     char        temp_str[5];
@@ -50,13 +50,13 @@ class ScrollItem : public Fl_Group {
     char        hhours_str[5];
     Fl_Input*   htemp;          // HOLD temperature in DegC
     char        htemp_str[5];
-    Fl_Box*     infoBox;     // Information box displaying thermostat status
+    Fl_Box*     infoBox;        // Information box displaying thermostat status
     
     bool        timerON;
     
     Stat*       stat;           // pointer to the Stat object associated with the row
     Timer*      timer;
-    bool        isStat;            // true if item is a thermostat, false if it's a timer.
+    bool        isStat;         // true if item is a thermostat, false if it's a timer.
     char        status_label[LEN_STATUS_LABEL];  // text of the info box
    
 public:
@@ -128,8 +128,6 @@ public:
         if(isStat) strcpy(id_str,stat->getName().c_str());
             else   strcpy(id_str,timer->getName().c_str());
         id->label(id_str);
-        
-        //std::cout << id->label() << " ";    // TBD
                
         //Temperature for stat
         temp_str[0] = '\0';
@@ -138,26 +136,22 @@ public:
             // Stat temperature
             strcpy(temp_str,stat->curr_temp.c_str());
             temperature->label(temp_str);
-            if (stat->isOn()){ // if heat is on set background ro RED
+            if (stat->isOn()){ // if heat is on set background  RED
                temperature->color(FL_RED);
             }
-            //std::cout << temperature->label() << " ";   // TBD
             // Stat Set Temperature
             strcpy(set_temp_str,stat->curr_set_temp.c_str());
             set_temp->label(set_temp_str);
-            //std::cout << set_temp->label() << std::endl;    // TBD
         }else{
             // Timer "Temperature"
             if (timer->isOn()){
                 strcpy(temp_str,"ON");
                 temperature->label(temp_str);
                 temperature->color(FL_RED);
-                //std::cout << "ON" << std::endl; // TBD
             }else{
                
                 strcpy(temp_str,"OFF");
                 temperature->label(temp_str);
-                //std::cout << "OFF" << std::endl; // TBD
             }
             temperature->label(temp_str);
         }
@@ -186,7 +180,6 @@ public:
             status << "Neostat programming";
         }
         
-        
         strncpy(status_label, status.str().c_str(),LEN_STATUS_LABEL);
         status_label[LEN_STATUS_LABEL - 1] = '\0'; // in case strncpy() overrun
         infoBox->label(status_label);
@@ -197,6 +190,7 @@ public:
 }; // Class ScrollItem
 
 void editStat_cb(Fl_Widget* w, void *data);
+void editTimer_cb(Fl_Widget* w, void *data);
 //***************************************
 //
 // Class MyScroll
@@ -224,7 +218,6 @@ public:
         nchild = 0;
         visible = false;
     }
-    
     
     //  MyScroll    resize()
     //
@@ -254,12 +247,14 @@ public:
         if(st){
             thisRow->stat = (Stat *)neostat;  // establish pointer to Neostat object
             thisRow->isStat = true;
+            thisRow->id->callback(editStat_cb, (void *)neostat);
         }else{
             thisRow->timer = (Timer *)neostat;
             thisRow->isStat = false;
+            thisRow->id->callback(editTimer_cb, (void *)neostat);
         }
         // install callback on id button
-        thisRow->id->callback(editStat_cb, (void *)neostat);
+        
         thisRow->updateData();     // populate item with values from Stat
         add(thisRow);
         redraw();
@@ -270,21 +265,26 @@ public:
     
 };// Class MyScroll
 
-void saveComfort_cb(Fl_Widget* w, void* data);
+void saveComfort_cb(Fl_Widget* w, void* data); // protos of callbacks defined below
+void saveEvents_cb(Fl_Widget* w, void* data);
 //************************************
 // EditWindow              EDIT WINDOW
 class EditWindow : public Fl_Double_Window{
     
     friend void saveComfort_cb(Fl_Widget* w, void* data);
+    friend void saveEvents_cb(Fl_Widget* w, void* data);
     
     std::string     name;
     Comfort         newComfortLevel[2][4];
+    Event           newTimerEvent[2][4];
     char*           period_label[2];
     char*           ev_label[4];
     Fl_Box*         per_box[2];
     Fl_Box*         ev_box[4];
     Fl_Input*       ev_time[2][4];
     char*           ev_time_str[2][4];
+    Fl_Input*       ev_timeOff[2][4];
+    char*           ev_timeOff_str[2][4];
     Fl_Input*       ev_temp[2][4];
     char*           ev_temp_str[2][4];
     Fl_Button*      save;
@@ -293,18 +293,14 @@ public:
     
     std::string message;
     
-    
-    // Constructor
+    // Constructor - Thermostat variant
     EditWindow(Stat* stat, int W, int H): Fl_Double_Window(W,H){
-        
-        message = "hello World";
         
         int hpos {10};
         int hmargin {100};
         int vpos {10};
         int width {100};
         int depth {25};
-        
         
         int iwidth = width/2;
         
@@ -320,6 +316,7 @@ public:
         label(stat->getName().c_str());
         
         for(std::string period : periods){
+            // Coloumn Names
             period_label[period_idx] = new char[period.length()];
             strcpy(period_label[period_idx],period.c_str());
             per_box[period_idx] = new Fl_Box(hpos+hmargin,vpos,width,depth,period_label[period_idx]);
@@ -329,6 +326,7 @@ public:
             for(std::string event : events){   // // ) ::=  ["HH:MM",(int)temp]
                 vpos+=depth;
                 if(period_idx == 0){
+                    // Row Names
                     ev_label[event_idx] = new char[16];
                     strcpy(ev_label[event_idx],events[event_idx].c_str());
                     ev_box[event_idx] = new Fl_Box(hpos,vpos,width,depth,ev_label[event_idx]);
@@ -364,7 +362,6 @@ public:
             ++period_idx;
             vpos = 10;
             hpos += width;
-            std::cout << std::endl;
         }
         
         // save button
@@ -378,18 +375,107 @@ public:
 
     };
     
+    // Constructor - Timer Variant
+    EditWindow(Timer* stat, int W, int H): Fl_Double_Window(W,H){
+        
+        
+        int hpos {10};
+        int hmargin {100};
+        int vpos {10};
+        int width {100};
+        int depth {25};
+        
+        int iwidth = width/2;
+        
+        std::string time {"HH:MM"};
+        std::string timeOff {"HH:MM"};
+        int temp {20};
+        
+        begin();
+        
+        std::string periods[] = {"monday","sunday"};
+        std::string events[] = {"time1","time2","time3","time4"};
+        int event_idx;
+        int period_idx =0;
+        label(stat->getName().c_str());
+        
+        for(std::string period : periods){
+            // Coloumn Names
+            period_label[period_idx] = new char[period.length()];
+            strcpy(period_label[period_idx],period.c_str());
+            per_box[period_idx] = new Fl_Box(hpos+hmargin,vpos,width,depth,period_label[period_idx]);
+                per_box[period_idx]->box(FL_UP_BOX);
+                per_box[period_idx]->show();
+            event_idx = 0;
+            for(std::string event : events){   // // ) ::=  ["HH:MM",(int)temp]
+                vpos+=depth;
+                if(period_idx == 0){
+                    // Row Names
+                    ev_label[event_idx] = new char[16];
+                    strcpy(ev_label[event_idx],events[event_idx].c_str());
+                    ev_box[event_idx] = new Fl_Box(hpos,vpos,width,depth,ev_label[event_idx]);
+                        ev_box[event_idx]->box(FL_UP_BOX);
+                        ev_box[event_idx]->show();
+                }else{
+                    hpos=10;
+                }
+                hpos+=width + width * period_idx;
+                
+                
+                time = stat->timerEvents[period_idx][event_idx].getTimeOn();
+                ev_time_str[period_idx][event_idx] = new char[8];
+                strcpy(ev_time_str[period_idx][event_idx], time.c_str());
+                
+                timeOff = stat->timerEvents[period_idx][event_idx].getTimeOff();
+                ev_timeOff_str[period_idx][event_idx] = new char[8];
+                strcpy(ev_timeOff_str[period_idx][event_idx], timeOff.c_str());
+                
+                /*
+                temp = stat->comfortLevels[period_idx][event_idx].getTemp();
+                ev_temp_str[period_idx][event_idx] = new char[8];
+                sprintf(ev_temp_str[period_idx][event_idx],"%i",temp);
+                 */
+                
+                newTimerEvent[period_idx][event_idx].setTimerEvent(time, timeOff);
+                        
+                ev_time[period_idx][event_idx] = new Fl_Input(hpos,vpos,iwidth,depth);
+                    ev_time[period_idx][event_idx]->box(FL_UP_BOX);
+                    ev_time[period_idx][event_idx]->value(ev_time_str[period_idx][event_idx]);
+                    ev_time[period_idx][event_idx]->show();
+                hpos+=iwidth;
+                
+                ev_timeOff[period_idx][event_idx] = new Fl_Input(hpos,vpos,iwidth,depth);
+                    ev_timeOff[period_idx][event_idx]->box(FL_UP_BOX);
+                ev_timeOff[period_idx][event_idx]->value(ev_timeOff_str[period_idx][event_idx]);
+                    ev_timeOff[period_idx][event_idx]->show();
+                ++event_idx;
+                hpos = 10;
+            }
+            ++period_idx;
+            vpos = 10;
+            hpos += width;
+        }
+        
+        // save button
+        save = new Fl_Button(220,150,50,25,"Save");
+        save->box(FL_UP_BOX);
+        save->callback(saveEvents_cb, stat);
+        save->show();
+        
+        end();
+        show();
+
+    };
+    
     ~EditWindow(){
         
-        std::cout << "destructor" << std::endl;
+        //std::cout << "destructor" << std::endl;
         
-        // these deletes throw exception ??????
-        
-        
-        delete[] period_label[2];
-        delete[] ev_label[4];
+        //delete[] period_label[2];
+        //delete[] ev_label[4];
     
       /*
-        
+        // these deletes throw exception ??????
         delete[] ev_box[4];
 
         delete[] ev_time[2][4];
@@ -407,27 +493,47 @@ public:
 };
 
 
-// consoleOutput()
+// consoleOutput(Fl_Browser*)
 //
 // - displays the contents of the redirected cout buffer to the console window
 //
-void consoleOutput(Fl_Browser* console){
-    std::stringstream iss(strCout.str()); // copy redirected cout buffer into stringstream
-    strCout.str("");
-    strCout.clear();                      // clear the cout buffer
+// This function can be called with Fl_Browser* set to nullptr. This allows it to be called
+// from a scope that has no visability of the console object, EditWindow for example. When
+// this is called with valid pointer to a console, the pointer is stored in static space for
+// subsiquent calls, including those with nullprt arguements.
+//
+// One drawback with such an approach is that if the first use of this function is with a
+// nullprt arguement, the buffer is not sent to the console. The stream buffer is not flushed
+// however, so every nullptr carrying call with concatinate in the buffer until eventually a call
+// from scope with visability of the console object sets the static pointer variable and writes
+// the buffer to the Console clears it out.
+//
+void consoleOutput(Fl_Browser* con){
     
-    // add the string stream to the console line by line
-    while(iss.good())
-    {
-        std::string SingleLine;
-        getline(iss,SingleLine,'\n');
-        if(!SingleLine.empty()){
-            console->add(SingleLine.c_str());
-        }
+    static Fl_Browser* console {nullptr};
+    
+    if( console == nullptr && con != nullptr){
+        console = con;
     }
-    console->bottomline(console->size()+1);
     
-    console->redraw();
+    if (console != nullptr){
+        std::stringstream iss(strCout.str()); // copy redirected cout buffer into stringstream
+        strCout.str("");
+        strCout.clear();                      // clear the cout buffer
+        
+        // add the string stream to the console line by line
+        while(iss.good())
+        {
+            std::string SingleLine;
+            getline(iss,SingleLine,'\n');
+            if(!SingleLine.empty()){
+                console->add(SingleLine.c_str());
+            }
+        }
+        console->bottomline(console->size()+1);
+        
+        console->redraw();
+    }
 }
 
 //*************************************
@@ -436,7 +542,7 @@ void consoleOutput(Fl_Browser* console){
 
 void wquit_cb(Fl_Widget* w, void *data){
     EditWindow* window = (EditWindow*)w;
-    std::cout << "wquit_cb called" << std::endl;
+    //std::cout << "wquit_cb called" << std::endl;
     Fl::delete_widget(window);
     
 }
@@ -457,6 +563,23 @@ void editStat_cb(Fl_Widget* w, void *data){
     
 }
 
+void editTimer_cb(Fl_Widget* w, void *data){
+    
+    // There is a memory leak in the edit window.
+    
+    // data will be neostatbase*
+    Timer* stat = (Timer *)data;
+    EditWindow *win = new EditWindow(stat,320,180);
+    
+    // the callback is called when the window manager is used to
+    // close the window - i.e. hits the red spot top left
+    // Without this FLTK just does a hide() with exit(0) if it's the
+    // last window
+    win->callback(wquit_cb);
+    
+}
+
+
 void saveComfort_cb(Fl_Widget* w, void* data){
     
     EditWindow* win = (EditWindow*)w->parent();
@@ -466,9 +589,6 @@ void saveComfort_cb(Fl_Widget* w, void* data){
     //Fl_Browser* console = win->console;
     
     Comfort newComfort[2][4];
-    
-    std::cout << "stat " << stat->getName() << std::endl;   // TBD
-    std::cout << win->message << std::endl;                 // TBD
     
     std::string periods[] = {"monday","sunday"};
     std::string events[] = {"wake","leave","return","sleep"};
@@ -515,15 +635,90 @@ void saveComfort_cb(Fl_Widget* w, void* data){
            
             ++event_idx;
         }
-        
         ++period_idx;
     }
     if(data_ok){
-        stat->setComfortLevels(newComfort);
+        if (stat->setComfortLevels(newComfort)){
+            std::cout << stat->getName() << ": Comfort levels set." << std::endl;
+        }else{
+            std::cout << stat->getName() << ": Problem setting comfort levels." << std::endl;
+        };
     }
+    
+    consoleOutput(nullptr);
     
 }
 
+void saveEvents_cb(Fl_Widget* w, void* data){
+    
+    EditWindow* win = (EditWindow*)w->parent();
+    Timer* stat = (Timer*)data;
+    
+    // need to work out how to poke console output at end of this
+    //Fl_Browser* console = win->console;
+    
+    Event newEvent[2][4];
+    
+    std::string periods[] = {"monday","sunday"};
+    std::string events[] = {"time1","time2","time3","time4"};
+    int event_idx = 0;
+    int period_idx = 0;
+    
+    char time_ch[16];
+    std::string time_str;
+    char timeOff_ch[16];
+    std::string timeOff_str;
+    
+    bool data_ok = true;
+    
+    Time t;
+    Time tOff;
+    
+    for(std::string period : periods){
+        
+        event_idx = 0;
+        for(std::string event : events){   //
+            // e
+            
+            strcpy(time_ch, win->ev_time[period_idx][event_idx]->value());
+            time_str = time_ch;
+            if( ! t.setTime(time_str)){
+                // bad format time
+                data_ok = false;
+                win->ev_time[period_idx][event_idx]->color(FL_RED);
+            }else{
+                win->ev_time[period_idx][event_idx]->color(FL_WHITE);
+            }
+            win->ev_time[period_idx][event_idx]->redraw();
+            
+            strcpy(timeOff_ch, win->ev_timeOff[period_idx][event_idx]->value());
+            timeOff_str = timeOff_ch;
+            if( ! tOff.setTime(timeOff_str)){
+                // bad format time
+                data_ok = false;
+                win->ev_timeOff[period_idx][event_idx]->color(FL_RED);
+            }else{
+                win->ev_timeOff[period_idx][event_idx]->color(FL_WHITE);
+            }
+            win->ev_timeOff[period_idx][event_idx]->redraw();
+            
+            newEvent[period_idx][event_idx].setTimerEvent(t, tOff);
+           
+            ++event_idx;
+        }
+        ++period_idx;
+    }
+    if(data_ok){
+        if (stat->setTimerEvents(newEvent)){
+            std::cout << stat->getName() << ": Timer events set." << std::endl;
+        }else{
+            std::cout << stat->getName() << ": Problem setting timer events." << std::endl;
+        };
+    }
+    
+    consoleOutput(nullptr);
+    
+}
 
 
 
@@ -550,7 +745,7 @@ void sync_cb(Fl_Widget* wgt, void *data) {
         console = scroll->console;
         for ( int t=0; t < scroll->nchild; t++ ) {
             w = (ScrollItem *)scroll->child(t);
-            std::cout << "syncing " << w->id->label() << " ";   // TBD
+            // std::cout << "syncing " << w->id->label() << " ";   // TBD
             std::cout << ".";
             w->updateData();
         }

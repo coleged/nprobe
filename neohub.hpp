@@ -195,6 +195,7 @@ private:
  
  //void setTimerEvent(Time tmOn,Time tmOff);
  void setTimerEvent(std::string tmOn,std::string tmOff);
+ void setTimerEvent(Time stimeOn, Time stimeOff);
  void print(); // debug method
  
  
@@ -215,7 +216,7 @@ public:
     NeoStatBase();
     ~NeoStatBase();
     
-    std::string getName();          // returns the name of the device
+    virtual std::string getName();          // returns the name of the device
 
     std::string    curr_temp;
     std::string    curr_set_temp;
@@ -324,7 +325,7 @@ class Stat: public NeoStatBase{     // A heatmiser Neostat
     
 friend class Neohub;
 friend class EditWindow;
-friend class EditWindow2;
+
 //friend void editStat_cb(Fl_Widget* , void *);
     
 public:
@@ -365,6 +366,7 @@ private:
 class Timer: public NeoStatBase{
     
 friend class Neohub;
+friend class EditWindow;
     
 public:
     Timer();
@@ -376,6 +378,7 @@ public:
     bool holdOff();
     void getTimerEvents();
     void printTimerEvents();
+    bool setTimerEvents(Event events[2][4]);
     
     
 private: 

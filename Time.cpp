@@ -76,7 +76,7 @@ bool Time::setTime(std::string t){
 
 bool Time::check(){       // returns true is time is good
     bool ret = true;
-    if(hours > 23) ret = false;
+    if(hours > 24) ret = false;
     if(hours < 0 ) ret = false;
     if(mins > 60 ) ret = false;
     if(mins < 0 ) ret = false;

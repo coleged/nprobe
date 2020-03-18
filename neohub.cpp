@@ -437,20 +437,20 @@ void Stat::printComfortLevels(){
 
 bool Stat::setComfortLevels(Comfort levels[2][4]){
     
-    // newComfortLevels is pointer to a [2][4] array of objects
+    // levels is pointer to a [2][4] array of Comfort objects
     // cmd of the form ......
     /*
     JSON COMMAND LOOKS LIKE THIS
- {"SET_COMFORT_LEVELS":
-   [
-    {"monday":
-      {"wake":["07:00",21],"leave":["09:00",21],"return":["16:00",21],"sleep":["22:00",21]},
-     "sunday":
-      {"wake":["07:00",21],"leave":["09:00",21],"return":["16:00",21],"sleep":["22:00",21]}
-    },
-     ["Guest Room"]
-   ]
-  }
+     {"SET_COMFORT_LEVELS":
+       [
+        {"monday":
+          {"wake":["07:00",21],"leave":["09:00",21],"return":["16:00",21],"sleep":["22:00",21]},
+         "sunday":
+          {"wake":["07:00",21],"leave":["09:00",21],"return":["16:00",21],"sleep":["22:00",21]}
+        },
+         ["Guest Room"]
+       ]
+      }
      */
     
     std::string periods[] = {"monday","sunday"};
@@ -477,19 +477,17 @@ bool Stat::setComfortLevels(Comfort levels[2][4]){
             ++event_idx;
         }
         cmd << R"(})";
-        std::cout << std::endl;
         if (period_idx == 0){
             cmd << R"(,)";
         }
         ++period_idx;
     }
     cmd << R"(},[")" << this->getName();
-    
     cmd << R"("]]})";
     
     cmd_s = cmd.str();
     
-    std::cout << cmd_s << std::endl;
+    //std::cout << cmd_s << std::endl;
     
     char* cmd_c = new char[cmd_s.length()];
     strcpy(cmd_c, cmd_s.c_str());
@@ -501,9 +499,9 @@ bool Stat::setComfortLevels(Comfort levels[2][4]){
         std::cout << "Failed to set comfort levels " << this->device.c_str() << std::endl;
         return false;
     }
-    //std::cout << result << std::endl;
+    // std::cout << result << std::endl;
     json R = json::parse(result);
-    std::cout << R["result"].get<std::string>() << std::endl;
+    // std::cout << R["result"].get<std::string>() << std::endl;
     
     if(R["result"].get<std::string>() == "comfort levels set"){
         return true;
@@ -642,6 +640,14 @@ void Event::setTimerEvent(std::string stimeOn, std::string stimeOff){
     m = stoi(stimeOff.substr(3,2));
     off.setTime(h,m);
 }//setTimerEvent()
+
+void Event::setTimerEvent(Time stimeOn, Time stimeOff){
+    
+    on = stimeOn;
+    off = stimeOff;
+    
+}//setTimerEvent()
+
 
 void Event::print(){
     printf("%s %s",on.asStr().c_str(),off.asStr().c_str());
@@ -784,3 +790,80 @@ void Timer::printTimerEvents(){
         ++period_idx;
     }//for period
 }//printTimerEvents()
+
+bool Timer::setTimerEvents(Event timerEvents[2][4]){
+    
+    // events is pointer to a [2][4] array of event objects
+    // cmd of the form ......
+    /*
+    JSON COMMAND LOOKS LIKE THIS
+     {"SET_TIMECLOCK":
+     [{
+     "monday":
+             {"time1":["06:00","10:00"],"time2":["18:00","23:30"],
+              "time3":["24:00","00:00"],"time4":["24:00","00:00"]},
+     "sunday":
+             {"time1":["06:00","10:00"],"time2":["16:00","23:30"],
+              "time3":["24:00","00:00"],"time4":["24:00","00:00"]}
+       },"Bronze"
+     ]
+     }
+     */
+    
+    std::string periods[] = {"monday","sunday"};
+    std::string events[] = {"time1","time2","time3","time4"};
+    int event_idx = 0;
+    int period_idx = 0;
+    
+    std::stringstream cmd;
+    std::string cmd_s;
+    cmd << R"({"SET_TIMECLOCK":[{)";
+    
+    for(std::string period : periods){
+        cmd << R"(")" << period << R"(":{)";
+        event_idx = 0;
+        for(std::string event : events){   // // ) ::=  ["HH:MM",(int)temp]
+            cmd << R"(")" << event << R"(":[")";
+            cmd << timerEvents[period_idx][event_idx].getTimeOn();
+            cmd << R"(",")";
+            cmd << timerEvents[period_idx][event_idx].getTimeOff();
+            cmd << R"("])";
+            if ( event_idx < 3){
+                cmd << R"(,)";
+            }
+            ++event_idx;
+        }
+        cmd << R"(})";
+        if (period_idx == 0){
+            cmd << R"(,)";
+        }
+        ++period_idx;
+    }
+    cmd << R"(},[")" << this->getName();
+    cmd << R"("]]})";
+    
+    cmd_s = cmd.str();
+    
+    //std::cout << cmd_s << std::endl;
+    
+    char* cmd_c = new char[cmd_s.length()];
+    strcpy(cmd_c, cmd_s.c_str());
+    
+    // apply new comfort levels to hub
+    char* result = hub->getHub(cmd_c);
+    
+    
+    if(result==nullptr){
+        std::cout << "Failed to set comfort levels " << this->device.c_str() << std::endl;
+        return false;
+    }
+    // std::cout << result << std::endl;
+    json R = json::parse(result);
+    //std::cout << R["result"].get<std::string>() << std::endl;
+    
+    if(R["result"].get<std::string>() == "time clocks were set"){
+        return true;
+    }
+    return false;
+    
+}
