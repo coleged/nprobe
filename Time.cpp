@@ -31,21 +31,18 @@ Time::Time(const Time &t){
 
 //*****************************************
 bool Time::setTime(int h, int m){
-    hours = h;
-    mins = m;
+    hours   = h;
+    mins    = m;
     if(check()){
         return true;
     }
     return false;
 }//setTime
 
-bool isDigits(const std::string &str)
-{
-    return str.find_first_not_of("0123456789") == std::string::npos;
-}
 
 bool Time::setTime(std::string t){
-    // t = HH:MM or hhmm
+    // t = "HH:MM" or "hhmm"
+    // returns false on failure.
     std::string h;
     std::string m;
     if(t.length() < 4) return false;
@@ -74,13 +71,12 @@ bool Time::setTime(std::string t){
 
 
 
-bool Time::check(){       // returns true is time is good
+inline bool Time::check(){       // returns true is time is good
     bool ret = true;
     if(hours > 24) ret = false;
     if(hours < 0 ) ret = false;
     if(mins > 60 ) ret = false;
     if(mins < 0 ) ret = false;
-    
     return ret;
 }
 
@@ -98,8 +94,6 @@ std::string Time::asStr(){
     
     return ret;
 }//toStr
-
-
 
 //*****************************************
 std::string Time::asStr(int h, int m){

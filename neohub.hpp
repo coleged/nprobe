@@ -12,7 +12,6 @@
     hang over from some code snipets taken from some C programms. Look at more consistant
     use of std::string types. Examples of *char that could be rationalised include
                                     server name
-                                    
  
  */
 
@@ -42,7 +41,7 @@ Classes:
 #define USE_CONSOLE
 
 #define MYNAME  "nprobe"
-#define VERSION "nprobe version 2.2.4b Febuary 2020. Ed Cole <colege@gmail.com>"
+#define VERSION "nprobe version 2.2.5b October 2020. Ed Cole <colege@gmail.com>"
 #define GUI_TITLE "nprobe - Rainbow Wood House heating system"
 // V2.2 uses nlohmann/jsoncpp
 

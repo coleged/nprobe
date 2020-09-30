@@ -54,7 +54,7 @@ class ScrollItem : public Fl_Group {
     
     bool        timerON;
     
-    Stat*       stat;           // pointer to the Stat object associated with the row
+    Stat*       stat;           // pointer to the Stat or Timer object associated with the row
     Timer*      timer;
     bool        isStat;         // true if item is a thermostat, false if it's a timer.
     char        status_label[LEN_STATUS_LABEL];  // text of the info box
@@ -71,6 +71,7 @@ public:
             // Fixed width box - The Name (or id) for the neostat
             //
             id = new Fl_Button(X,Y,idWidth,defaultHeight,L);
+            id->tooltip("edit");
             id->box(FL_UP_BOX);
             posOffset+=idWidth;
             //
@@ -223,7 +224,7 @@ public:
     //
     void resize(int X, int Y, int W, int H) {
         // Tell children to resize to our new width
-        for ( int t=0; t<nchild; t++ ) {
+        for ( int t=0; t<nchild; ++t ) {
             Fl_Widget *w = child(t);
             w->resize(w->x(), w->y(), W-20, w->h());    // W-20: leave room for scrollbar
         }
@@ -257,8 +258,8 @@ public:
         
         thisRow->updateData();     // populate item with values from Stat
         add(thisRow);
-        redraw();
         nchild++;
+        redraw();
         return thisRow;
         
     }// AddItem()
@@ -267,6 +268,7 @@ public:
 
 void saveComfort_cb(Fl_Widget* w, void* data); // protos of callbacks defined below
 void saveEvents_cb(Fl_Widget* w, void* data);
+void sync_cb(Fl_Widget* wgt, void *data);
 //************************************
 // EditWindow              EDIT WINDOW
 class EditWindow : public Fl_Double_Window{
@@ -645,7 +647,7 @@ void saveComfort_cb(Fl_Widget* w, void* data){
         };
     }
     
-    consoleOutput(nullptr);
+    sync_cb(nullptr, nullptr);
     
 }
 
@@ -716,7 +718,7 @@ void saveEvents_cb(Fl_Widget* w, void* data){
         };
     }
     
-    consoleOutput(nullptr);
+    sync_cb(nullptr, nullptr);
     
 }
 
@@ -728,8 +730,26 @@ void sync_cb(Fl_Widget* wgt, void *data) {
     
     Neohub *myHub;
     Fl_Browser* console {nullptr};
+    
+    // using sscrolls (pointer on heap) and local scrolls pointer, with some pretty
+    // scary casts to get this to compile.
+    static std::vector<MyScroll*>  *sscrolls = nullptr;
+    
+    // if I already have a static pointer to the scroll object vector continue on
+    // if I don't already have a valid pointer to the scroll object vector and
+    // *data is nullptr, then do nothing; just return
+    // However if the data pointer is non-nullptr then set the static pointer variable
+    
+    if( sscrolls == nullptr ){
+        if (data != nullptr) {
+            sscrolls = ((std::vector<MyScroll*>*) data);
+        }else{
+            return;
+        }
+    }
     // scrolls is a pointer to a vector of scroll pointers
-    std::vector<MyScroll*>  scrolls = *((std::vector<MyScroll*>*) data);
+    std::vector<MyScroll*>  scrolls = *((std::vector<MyScroll*>*) sscrolls);
+    
     MyScroll *firstScroll = (MyScroll*)scrolls[1];
     //
     myHub = firstScroll->neohub;
@@ -935,7 +955,9 @@ int    gui(Neohub* myHub){
         // THERMOSTAT TAB
         Fl_Group *statTab = new Fl_Group(10,50,win->w()-20,win->h()-220," Thermostats ");
             statTab->begin();
-                MyScroll *scrollStats = new MyScroll(10,50,win->w()-20,win->h()-220);
+                // some problem with hieght of scroll is giving loss of mouse focus in
+                // last scroll item. playing with hieght. (replaced -220 with -245)
+                MyScroll *scrollStats = new MyScroll(10,50,win->w()-20,win->h()-245);
         
                 scrollStats->neohub = myHub;
                 scrollStats->box(FL_BORDER_BOX);
@@ -1005,6 +1027,11 @@ int    gui(Neohub* myHub){
         // fields and the heatbeat timeout calls sync before user
         // has pressed the hold button the edits will be deleted
         Fl::add_timeout(HEART_BEAT, heartbeat_cb, (void*)&scrolls);
+    
+        // calling sync_cb here with pointer to scrolls vactor will
+        // initialise static pointer variables in called function.
+    
+        sync_cb(win, (void *)&scrolls);
     
     int ret = Fl::run();    // it shouldn't return from run()
     

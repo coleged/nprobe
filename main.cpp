@@ -103,9 +103,11 @@ void timeTest(){
     }
 }
 
-
-
-// ************   main()
+//*****************************************
+//
+//          MAIN MAIN MAIN
+//
+//*****************************************
 //
 int main(int argc, char *argv[]) {
     
@@ -125,12 +127,10 @@ int main(int argc, char *argv[]) {
     std::string zone = "";
     std::string hold_timer = "";
     std::string unhold_timer = "";
-
     
     int hold_temp = DEF_HOLD_TEMP;
     int hold_hours = DEF_HOLD_HOURS;
     int hold_mins = DEF_HOLD_MINS;
-    
 
     char *set_server;
     char *cmd_file = nullptr;
@@ -260,7 +260,6 @@ int main(int argc, char *argv[]) {
         errorUsage();
         exit(EXIT_SUCCESS); // it's not a failure as such
     }
-    
     
     myHub.init();
     
